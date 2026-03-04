@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { WorkEntry } from '../types';
+import { logoBase64 } from './logo';
 
 export const exportToExcel = (data: WorkEntry[], fileName: string = 'CA_Work_Report') => {
     const worksheet = XLSX.utils.json_to_sheet(data.map(entry => ({
@@ -25,16 +26,31 @@ export const exportToExcel = (data: WorkEntry[], fileName: string = 'CA_Work_Rep
 export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Report') => {
     const doc = new jsPDF();
 
+    // Add Logo
+    try {
+        doc.addImage(logoBase64, 'PNG', 15, 12, 45, 10);
+    } catch (e) {
+        console.error('Error adding logo to PDF', e);
+    }
+
+    // Header - Company Name
     doc.setFontSize(18);
     doc.setTextColor(30, 41, 59); // Slate 800
-    doc.text('Abhram and Kurian', 15, 22);
+    doc.text('Abraham & Kurian', 15, 28);
+
+    // Contact Info (Small text at top right)
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    const rightMargin = doc.internal.pageSize.width - 15;
+    doc.text('Thiruvalla: 0469-2601291 | abrahamnkurian@gmail.com', rightMargin, 15, { align: 'right' });
+    doc.text('Changanacherry: 0481-2422053 | antony.fca@gmail.com', rightMargin, 20, { align: 'right' });
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Work Management Report - Generated on: ${new Date().toLocaleDateString()}`, 15, 30);
+    doc.text(`Work Management Report - Generated on: ${new Date().toLocaleDateString()}`, 15, 36);
 
     autoTable(doc, {
-        startY: 38,
+        startY: 42,
         head: [['Date', 'Customer', 'Service', 'Assigned', 'Status', 'Amount', 'Payment']],
         body: data.map(e => [
             e.date,
@@ -48,14 +64,19 @@ export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Repor
         headStyles: {
             fillColor: [43, 89, 219],
             fontSize: 9,
-            cellPadding: 3
+            cellPadding: 3,
+            halign: 'center'
         },
         bodyStyles: {
             fontSize: 8,
-            cellPadding: 2
+            cellPadding: 2,
+            valign: 'middle'
+        },
+        columnStyles: {
+            5: { halign: 'right' }, // Amount column
         },
         alternateRowStyles: { fillColor: [248, 250, 252] },
-        margin: { top: 40, right: 15, bottom: 15, left: 15 },
+        margin: { top: 45, right: 15, bottom: 15, left: 15 },
         styles: { font: 'helvetica' }
     });
 
