@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import {
-    ArrowLeft, TrendingUp, PieChart as PieIcon
+    ArrowLeft, TrendingUp
 } from 'lucide-react';
 import {
-    PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend
+    PieChart, Pie, Cell, ResponsiveContainer, Tooltip
 } from 'recharts';
 import { motion } from 'motion/react';
 import { WorkEntry } from '../types';
@@ -13,44 +13,22 @@ interface AnalyticsViewProps {
     onBack: () => void;
 }
 
-// Modern colors from the user's reference image
-const COLORS = [
-    '#0ea5e9', // Blue
-    '#84cc16', // Green
-    '#fbbf24', // Yellow
-    '#ef4444', // Red
-    '#8b5cf6', // Purple
-    '#ec4899', // Pink
-    '#06b6d4', // Cyan
-];
-
 const STATUS_COLORS: Record<string, string> = {
-    'Completed': '#84cc16',
-    'Pending Approval': '#fbbf24',
-    'Assigned': '#0ea5e9',
-    'Initiated': '#8b5cf6',
-    'Document Requested': '#ec4899',
-    'Not Assigned': '#94a3b8',
+    'Completed': '#84cc16',         // Lime Green (Marketing-like)
+    'Pending Approval': '#fbbf24',  // Amber (Travel-like)
+    'Assigned': '#0ea5e9',         // Sky Blue (Infrastructure-like)
+    'Initiated': '#8b5cf6',        // Purple
+    'Document Requested': '#ec4899',// Pink
+    'Not Assigned': '#f43f5e',     // Rose (Others-like)
 };
 
-const RADIAN = Math.PI / 180;
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 1.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-        <text
-            x={x}
-            y={y}
-            fill="#334155"
-            textAnchor={x > cx ? 'start' : 'end'}
-            dominantBaseline="central"
-            className="text-[10px] sm:text-xs font-bold"
-        >
-            {`${name} (${(percent * 100).toFixed(0)}%)`}
-        </text>
-    );
+const SHADOW_COLORS: Record<string, string> = {
+    'Completed': '#4d7c0f',
+    'Pending Approval': '#b45309',
+    'Assigned': '#0369a1',
+    'Initiated': '#6d28d9',
+    'Document Requested': '#be185d',
+    'Not Assigned': '#9f1239',
 };
 
 export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
@@ -70,128 +48,170 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col min-h-[80vh] w-full p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto"
+            className="flex flex-col min-h-screen w-full bg-slate-50/50"
         >
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between p-6 lg:px-10 bg-white border-b border-slate-200">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onBack}
-                        className="p-2 mr-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm group"
+                        className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm group"
                     >
                         <ArrowLeft className="w-5 h-5 text-slate-600 group-hover:-translate-x-1 transition-transform" />
                     </button>
                     <div>
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Status Distribution</h2>
-                        <p className="text-sm text-slate-500 font-medium">Real-time work profile analysis</p>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">3D Work Analytics</h2>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">Expenses Analysis - 3D Pie Chart</p>
                     </div>
                 </div>
-                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-full border border-primary/10">
                     <TrendingUp className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-wider">High Fidelity Data</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Premium Insights</span>
                 </div>
             </div>
 
-            {/* Central 3D-Style Hero Chart */}
-            <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="relative w-full aspect-square max-w-[600px] flex items-center justify-center">
-                    {/* Background Glow */}
-                    <div className="absolute inset-0 bg-primary/5 rounded-full blur-3xl -z-10 animate-pulse" />
+            <div className="flex-1 flex flex-col items-center justify-center -mt-10 overflow-hidden">
+                {/* 3D Container */}
+                <div
+                    className="relative w-full max-w-[800px] h-[500px] flex items-center justify-center"
+                    style={{ perspective: '1200px' }}
+                >
+                    {/* The "Table" Surface for shadows */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-slate-900/5 rounded-full blur-3xl transform rotateX(65deg) translateZ(-50px)" />
 
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <defs>
-                                <filter id="shadow" height="200%">
-                                    <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
-                                    <feOffset dx="0" dy="5" result="offsetblur" />
-                                    <feComponentTransfer>
-                                        <feFuncA type="linear" slope="0.3" />
-                                    </feComponentTransfer>
-                                    <feMerge>
-                                        <feMergeNode />
-                                        <feMergeNode in="SourceGraphic" />
-                                    </feMerge>
-                                </filter>
-                                {data.map((entry, index) => (
-                                    <linearGradient key={`grad-${index}`} id={`grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]} stopOpacity={1} />
-                                        <stop offset="100%" stopColor={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]} stopOpacity={0.8} />
-                                    </linearGradient>
-                                ))}
-                            </defs>
-
-                            {/* The "3D Depth" Layer */}
-                            <Pie
-                                data={data}
-                                cx="50%"
-                                cy="52%"
-                                innerRadius={0}
-                                outerRadius="65%"
-                                dataKey="value"
-                                isAnimationActive={false}
-                                stroke="none"
+                    {/* The 3D Chart Group */}
+                    <div
+                        className="relative w-full h-full flex items-center justify-center transform-gpu cursor-pointer"
+                        style={{
+                            transformStyle: 'preserve-3d',
+                            transform: 'rotateX(55deg) rotateZ(0deg)',
+                        }}
+                    >
+                        {/* ── Thickness Layers (Draw multiple stacked slices for real depth) ── */}
+                        {[...Array(15)].map((_, i) => (
+                            <div
+                                key={`depth-${i}`}
+                                className="absolute inset-0 pointer-events-none"
+                                style={{ transform: `translateZ(${-i * 1.5}px)` }}
                             >
-                                {data.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-depth-${index}`}
-                                        fill={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]}
-                                        style={{ filter: 'brightness(0.6)' }}
-                                    />
-                                ))}
-                            </Pie>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={data}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={0}
+                                            outerRadius="35%"
+                                            dataKey="value"
+                                            isAnimationActive={false}
+                                            stroke="none"
+                                        >
+                                            {data.map((entry, index) => (
+                                                <Cell
+                                                    key={`cell-depth-${i}-${index}`}
+                                                    fill={SHADOW_COLORS[entry.name] || '#334155'}
+                                                />
+                                            ))}
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ))}
 
-                            {/* Main Top Layer */}
-                            <Pie
-                                data={data}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={true}
-                                label={renderCustomizedLabel}
-                                outerRadius="65%"
-                                fill="#8884d8"
-                                dataKey="value"
-                                stroke="#fff"
-                                strokeWidth={2}
-                                style={{ filter: 'url(#shadow)' }}
-                                animationBegin={0}
-                                animationDuration={1000}
-                            >
-                                {data.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={`url(#grad-${index})`}
+                        {/* ── Top Layer (The actual interactive surface) ── */}
+                        <div className="absolute inset-0" style={{ transform: 'translateZ(1px)' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={data}
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius="35%"
+                                        dataKey="value"
+                                        stroke="#ffffff"
+                                        strokeWidth={1}
+                                        animationBegin={200}
+                                        animationDuration={1500}
+                                        labelLine={false}
+                                    >
+                                        {data.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-top-${index}`}
+                                                fill={STATUS_COLORS[entry.name] || '#94a3b8'}
+                                            />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{
+                                            borderRadius: '16px',
+                                            border: 'none',
+                                            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                                            transform: 'rotateX(-55deg) translateZ(100px)', // Counter rotate tooltip
+                                            background: 'rgba(255, 255, 255, 0.95)',
+                                            backdropFilter: 'blur(8px)'
+                                        }}
+                                        itemStyle={{ fontWeight: 'black', color: '#1e293b' }}
                                     />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                contentStyle={{
-                                    borderRadius: '16px',
-                                    border: 'none',
-                                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                                    padding: '12px 16px'
-                                }}
-                                itemStyle={{ fontWeight: 'bold' }}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* ── Floating Labels (Positioned in 2D to be readable) ── */}
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                        <div className="w-full h-full relative max-w-[600px] max-h-[600px]">
+                            {data.map((entry, index) => {
+                                // Simple logic to spread labels around
+                                const angle = (index / data.length) * 360 - 90;
+                                const rad = angle * (Math.PI / 180);
+                                const x = 50 + 38 * Math.cos(rad);
+                                const y = 50 + 20 * Math.sin(rad); // Narrower Y to match tilted perspective
+
+                                return (
+                                    <motion.div
+                                        key={`label-${index}`}
+                                        initial={{ opacity: 0, scale: 0 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 1 + index * 0.1 }}
+                                        className="absolute flex flex-col items-center gap-1"
+                                        style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
+                                    >
+                                        <div className="bg-white/90 backdrop-blur-sm border border-slate-200 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2">
+                                            <div
+                                                className="w-2.5 h-2.5 rounded-full"
+                                                style={{ backgroundColor: STATUS_COLORS[entry.name] }}
+                                            />
+                                            <p className="text-[11px] font-black text-slate-800 whitespace-nowrap">
+                                                {entry.name}
+                                                <span className="ml-2 text-slate-400">
+                                                    {Math.round((entry.value / entries.length) * 100)}%
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <div className="h-4 w-px bg-slate-200" />
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
 
-                {/* Legend / Info Cards Below */}
-                <div className="mt-12 w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                {/* Legend / Metrics Grid */}
+                <div className="w-full max-w-5xl px-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     {data.map((entry, index) => (
                         <motion.div
                             key={index}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center justify-center gap-1"
+                            whileHover={{ y: -5 }}
+                            className="bg-white p-4 rounded-3xl border border-slate-200/60 shadow-sm flex flex-col items-center justify-center gap-1 text-center"
                         >
                             <div
-                                className="w-3 h-3 rounded-full mb-1"
-                                style={{ backgroundColor: STATUS_COLORS[entry.name] || COLORS[index % COLORS.length] }}
-                            />
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-none">{entry.name}</p>
-                            <p className="text-sm font-black text-slate-800 tracking-tight">{entry.value} Tasks</p>
+                                className="w-8 h-8 rounded-xl mb-1 flex items-center justify-center text-white font-bold"
+                                style={{ backgroundColor: STATUS_COLORS[entry.name] }}
+                            >
+                                {entry.value}
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">{entry.name}</p>
+                            <p className="text-xs font-black text-slate-900 mt-1">{Math.round((entry.value / entries.length) * 100)}%</p>
                         </motion.div>
                     ))}
                 </div>
