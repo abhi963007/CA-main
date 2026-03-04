@@ -14,7 +14,6 @@ export default function ManageMembersModal({ isOpen, onClose }: ManageMembersMod
 
     // Add form
     const [name, setName] = useState('');
-    const [initials, setInitials] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -25,18 +24,17 @@ export default function ManageMembersModal({ isOpen, onClose }: ManageMembersMod
     if (!isOpen) return null;
 
     async function handleAdd() {
-        if (!name.trim() || !initials.trim()) return;
+        if (!name.trim()) return;
         setIsSaving(true);
         try {
-            await addMember({ name, initials: initials.toUpperCase() });
-            setName(''); setInitials('');
+            await addMember({ name });
+            setName('');
         } catch (err) { console.error(err); }
         finally { setIsSaving(false); }
     }
 
     const filtered = members.filter(m =>
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.initials.toLowerCase().includes(search.toLowerCase())
+        m.name.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -74,25 +72,27 @@ export default function ManageMembersModal({ isOpen, onClose }: ManageMembersMod
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                            {filtered.map(m => (
-                                <div key={m.id} className="group flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-primary/20 hover:bg-slate-50 transition-all">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                                            {m.initials}
+                            {filtered.map(m => {
+                                const displayInitials = m.initials || m.name.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase();
+                                return (
+                                    <div key={m.id} className="group flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-primary/20 hover:bg-slate-50 transition-all">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                                                {displayInitials}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-slate-900 truncate">{m.name}</p>
+                                            </div>
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-bold text-slate-900 truncate">{m.name}</p>
-                                            <p className="text-[10px] text-slate-400 font-mono">CODE: {m.initials}</p>
-                                        </div>
+                                        <button
+                                            onClick={() => deleteMember(m.id)}
+                                            className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => deleteMember(m.id)}
-                                        className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ))}
+                                );
+                            })}
                             {filtered.length === 0 && (
                                 <div className="text-center py-10">
                                     <p className="text-sm text-slate-400 italic">No members found</p>
@@ -110,15 +110,9 @@ export default function ManageMembersModal({ isOpen, onClose }: ManageMembersMod
                                 value={name} onChange={e => setName(e.target.value)}
                                 className="w-full text-xs p-2.5 rounded-lg border border-slate-200 outline-none focus:border-primary"
                             />
-                            <input
-                                placeholder="Initials (e.g. AB) *"
-                                maxLength={3}
-                                value={initials} onChange={e => setInitials(e.target.value)}
-                                className="w-full text-xs p-2.5 rounded-lg border border-slate-200 outline-none focus:border-primary uppercase font-bold"
-                            />
                             <button
                                 onClick={handleAdd}
-                                disabled={isSaving || !name.trim() || !initials.trim()}
+                                disabled={isSaving || !name.trim()}
                                 className="w-full py-2.5 bg-primary text-white text-xs font-bold rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity font-bold uppercase tracking-wide"
                             >
                                 {isSaving ? 'Saving...' : 'Add Member'}

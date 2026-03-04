@@ -80,6 +80,7 @@ export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
     setError('');
 
     const assignedMember = members.find(m => m.name === assignedTo);
+    const assignedInitials = assignedMember?.initials || (assignedMember ? assignedMember.name.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase() : entry.assignedToInitials);
 
     try {
       await updateEntry(entry.id, {
@@ -88,7 +89,7 @@ export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
         areaOfWork,
         subParticular,
         assignedTo: assignedTo || 'Unassigned',
-        assignedToInitials: assignedMember?.initials || entry.assignedToInitials,
+        assignedToInitials: assignedInitials,
         assignedDate,
         status,
         billed,

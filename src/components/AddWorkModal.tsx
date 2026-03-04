@@ -59,6 +59,7 @@ export default function AddWorkModal({ isOpen, onClose }: AddWorkModalProps) {
     setError('');
 
     const assignedMember = members.find(m => m.name === assignedTo);
+    const assignedInitials = assignedMember?.initials || (assignedMember ? assignedMember.name.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase() : '');
 
     try {
       await addEntry({
@@ -67,7 +68,7 @@ export default function AddWorkModal({ isOpen, onClose }: AddWorkModalProps) {
         areaOfWork,
         subParticular,
         assignedTo: assignedTo || 'Unassigned',
-        assignedToInitials: assignedMember?.initials || '',
+        assignedToInitials: assignedInitials,
         assignedDate,
         status,
         billed,
