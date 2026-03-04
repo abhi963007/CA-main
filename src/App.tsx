@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Landmark, Plus, BarChart2, Banknote, CheckCircle2,
-  Search, Filter, Pencil, Trash2, RefreshCw,
+  Search, Filter, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { WorkEntry } from './types';
 import { subscribeToEntries } from './services/workEntries';
@@ -33,11 +33,11 @@ export default function App() {
   const [assignedToFilter, setAssignedToFilter] = useState('');
   const [dateFromFilter, setDateFromFilter] = useState('');
   const [dateToFilter, setDateToFilter] = useState('');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ── Real-time Firestore listener ──────────────────────────────────────────
   useEffect(() => {
     let unsub: (() => void) | undefined;
     try {
@@ -54,7 +54,6 @@ export default function App() {
     return () => unsub?.();
   }, []);
 
-  // ── Derived values ────────────────────────────────────────────────────────
   const assignedUsers: string[] = Array.from(new Set(entries.map((e) => e.assignedTo))).filter(
     (u): u is string => !!u && u !== 'Unassigned'
   );
@@ -77,11 +76,9 @@ export default function App() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const totalPending = entries
-    .filter((e) => e.paymentStatus === 'Not Received')
-    .reduce((s, e) => s + e.amount, 0);
+  const totalPending = entries.filter((e) => e.paymentStatus === 'Not Received').reduce((s, e) => s + e.amount, 0);
   const completedCount = entries.filter((e) => e.status === 'Completed').length;
+  const activeFiltersCount = [statusFilter, paymentStatusFilter, billedFilter, assignedToFilter, dateFromFilter, dateToFilter].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -96,101 +93,113 @@ export default function App() {
 
   const goToPage = (p: number) => setCurrentPage(Math.max(1, Math.min(p, totalPages)));
 
-  const handleEditSaved = (updated: WorkEntry) => {
-    setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
-  };
-
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-slate-50">
 
-      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-6 lg:px-10">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-primary text-white flex-shrink-0">
-            <Landmark className="w-5 h-5 sm:w-6 sm:h-6" />
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3 sm:px-6 lg:px-10">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white flex-shrink-0">
+            <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <h2 className="text-base sm:text-xl font-bold leading-tight tracking-tight text-slate-900">
-            CA Office Work Management
-          </h2>
+          <div>
+            <h1 className="text-sm sm:text-base font-bold leading-tight text-slate-900">CA Work Management</h1>
+            <p className="text-[10px] text-slate-400 hidden sm:block">Chartered Accountancy Office</p>
+          </div>
         </div>
         <button
           onClick={() => setIsAddOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-3 sm:px-5 py-2 sm:py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 flex-shrink-0"
+          className="flex items-center gap-1.5 sm:gap-2 rounded-lg bg-primary px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white transition-opacity hover:opacity-90 flex-shrink-0"
         >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="hidden sm:inline">Add Work</span>
-          <span className="sm:hidden">Add</span>
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Add Work</span>
         </button>
       </header>
 
-      <main className="flex flex-1 flex-col gap-4 sm:gap-6 p-4 sm:p-6 lg:px-10">
+      <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 lg:px-10">
 
-        {/* Firebase error banner */}
+        {/* Firebase error */}
         {firebaseError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs sm:text-sm text-red-700">
             <span className="font-semibold">Firebase Error:</span> {firebaseError}
-            <span className="ml-1 text-red-500">— Please update <code className="bg-red-100 px-1 rounded">src/firebase.ts</code> with your project config.</span>
           </div>
         )}
 
-        {/* ── Summary Cards ─────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-3">
-          <div className="flex flex-col gap-2 rounded-2xl border border-slate-200/60 bg-white p-4 sm:p-6 shadow-sm transition-shadow hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <p className="text-xs sm:text-sm font-semibold text-slate-500 uppercase tracking-wider">Total Entries</p>
-              <BarChart2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+        {/* ── Summary Cards ────────────────────────────────────────────── */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          {/* Total */}
+          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Total</p>
+              <BarChart2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900">{loading ? '—' : entries.length.toLocaleString('en-IN')}</p>
-            <p className="text-xs text-slate-400 font-medium">{filtered.length} matching filters</p>
+            <p className="text-lg sm:text-2xl font-bold text-slate-900">{loading ? '—' : entries.length.toLocaleString('en-IN')}</p>
+            <p className="text-[9px] sm:text-xs text-slate-400 mt-0.5">{filtered.length} matching</p>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-2xl border border-slate-200/60 bg-white p-4 sm:p-6 shadow-sm transition-shadow hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <p className="text-xs sm:text-sm font-semibold text-slate-500 uppercase tracking-wider">Pending Payment (₹)</p>
-              <Banknote className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
+          {/* Pending */}
+          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending</p>
+              <Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <p className="text-lg sm:text-2xl font-bold text-slate-900 truncate">
               {loading ? '—' : `₹${totalPending.toLocaleString('en-IN')}`}
             </p>
-            <p className="text-xs text-slate-500 font-medium">
-              {entries.filter((e) => e.paymentStatus === 'Not Received').length} unpaid invoices
+            <p className="text-[9px] sm:text-xs text-slate-400 mt-0.5">
+              {entries.filter((e) => e.paymentStatus === 'Not Received').length} invoices
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-2xl border border-slate-200/60 bg-white p-4 sm:p-6 shadow-sm transition-shadow hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <p className="text-xs sm:text-sm font-semibold text-slate-500 uppercase tracking-wider">Completed</p>
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
+          {/* Completed */}
+          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Done</p>
+              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
             </div>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900">{loading ? '—' : completedCount}</p>
-            <p className="text-xs text-primary font-medium">
-              {entries.length > 0
-                ? `${Math.round((completedCount / entries.length) * 100)}% completion rate`
-                : 'No data yet'}
+            <p className="text-lg sm:text-2xl font-bold text-slate-900">{loading ? '—' : completedCount}</p>
+            <p className="text-[9px] sm:text-xs text-primary mt-0.5">
+              {entries.length > 0 ? `${Math.round((completedCount / entries.length) * 100)}%` : '—'} rate
             </p>
           </div>
         </div>
 
-        {/* ── Filters ───────────────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/60 bg-white p-4 shadow-sm">
-          {/* Row 1: Search + Status/Payment/Billed */}
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            {/* Search */}
+        {/* ── Filters ──────────────────────────────────────────────────── */}
+        <div className="flex flex-col gap-3 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-4 shadow-sm">
+
+          {/* Search + mobile filter toggle */}
+          <div className="flex gap-2">
             <div className="relative flex-1">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+                <Search className="w-4 h-4 text-slate-400" />
               </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                placeholder="Search customer, work area or invoice..."
-                className="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 sm:pl-10 text-sm focus:border-primary focus:ring-primary outline-none"
+                placeholder="Search customer, work or invoice..."
+                className="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm focus:border-primary outline-none"
               />
             </div>
+            {/* Mobile filter toggle */}
+            <button
+              onClick={() => setShowMobileFilters(f => !f)}
+              className={`lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex-shrink-0 ${showMobileFilters || activeFiltersCount > 0 ? 'bg-primary text-white border-primary' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+            >
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">Filters</span>
+              {activeFiltersCount > 0 && (
+                <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${showMobileFilters ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+          </div>
 
-            {/* Status / Payment / Billed filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:flex lg:gap-3">
+          {/* Filter panel — always visible on lg+, toggle on mobile */}
+          <div className={`${showMobileFilters ? 'flex' : 'hidden'} lg:flex flex-col gap-3`}>
+            {/* Row 1: Status / Payment / Billed */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex gap-3">
               <CustomSelect
                 value={statusFilter}
                 onChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}
@@ -226,196 +235,249 @@ export default function App() {
                 ]}
               />
             </div>
-          </div>
 
-          {/* Row 2: Assigned To + Date Range + Clear */}
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
-            <CustomSelect
-              value={assignedToFilter}
-              onChange={(v) => { setAssignedToFilter(v); setCurrentPage(1); }}
-              placeholder="Assigned To"
-              className="w-full sm:w-auto sm:min-w-[160px]"
-              options={assignedUsers.map((u) => ({ label: u, value: u }))}
-            />
-
-            {/* Date range */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <input
-                type="date"
-                value={dateFromFilter}
-                onChange={(e) => { setDateFromFilter(e.target.value); setCurrentPage(1); }}
-                className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:border-primary outline-none text-slate-600"
+            {/* Row 2: Assigned To + Dates + Clear */}
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+              <CustomSelect
+                value={assignedToFilter}
+                onChange={(v) => { setAssignedToFilter(v); setCurrentPage(1); }}
+                placeholder="Assigned To"
+                className="w-full sm:w-auto sm:min-w-[150px]"
+                options={assignedUsers.map((u) => ({ label: u, value: u }))}
               />
-              <span className="text-slate-400 text-sm flex-shrink-0">to</span>
-              <input
-                type="date"
-                value={dateToFilter}
-                onChange={(e) => { setDateToFilter(e.target.value); setCurrentPage(1); }}
-                className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:border-primary outline-none text-slate-600"
-              />
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={dateFromFilter}
+                  onChange={(e) => { setDateFromFilter(e.target.value); setCurrentPage(1); }}
+                  className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:border-primary outline-none text-slate-600"
+                />
+                <span className="text-slate-400 text-xs flex-shrink-0">to</span>
+                <input
+                  type="date"
+                  value={dateToFilter}
+                  onChange={(e) => { setDateToFilter(e.target.value); setCurrentPage(1); }}
+                  className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:border-primary outline-none text-slate-600"
+                />
+              </div>
+              <button
+                onClick={() => { clearFilters(); setShowMobileFilters(false); }}
+                className="w-full sm:w-auto sm:ml-auto flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <Filter className="w-4 h-4" />
+                Clear Filters
+              </button>
             </div>
-
-            <button
-              onClick={clearFilters}
-              className="w-full sm:w-auto sm:ml-auto flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-            >
-              <Filter className="w-4 h-4" />
-              Clear Filters
-            </button>
           </div>
         </div>
 
-        {/* ── Table ─────────────────────────────────────────────────────────── */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                <tr>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Date</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Customer Name</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Area of Work</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Sub Particular</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Assigned To</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Assigned Date</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Status</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Billed</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Invoice No</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Amount</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">Payment</th>
-                  <th className="px-3 py-2.5 text-center whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={12} className="px-4 py-10 text-center">
-                      <div className="flex items-center justify-center gap-2 text-slate-400">
-                        <RefreshCw className="w-5 h-5 animate-spin" />
-                        <span className="text-sm font-medium">Loading from Firebase…</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={12} className="px-4 py-12 text-center text-slate-400 text-sm">
-                      {entries.length === 0
-                        ? 'No entries yet. Click "Add Work" to create your first entry.'
-                        : 'No entries match your current filters.'}
-                    </td>
-                  </tr>
-                ) : (
-                  paginated.map((entry) => (
-                    <tr
-                      key={entry.id}
-                      onClick={() => setViewingEntry(entry)}
-                      className="bg-white hover:bg-slate-50/80 transition-colors cursor-pointer"
-                    >
-                      <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-500">{entry.date}</td>
-                      <td className="px-3 py-2.5 font-semibold text-slate-900 max-w-[120px] truncate">{entry.customerName}</td>
-                      <td className="px-3 py-2.5 text-slate-600 max-w-[100px] truncate">{entry.areaOfWork}</td>
-                      <td className="px-3 py-2.5 text-slate-600 max-w-[100px] truncate">{entry.subParticular}</td>
-                      <td className="px-3 py-2.5">
-                        {entry.assignedToInitials ? (
-                          <div className="flex items-center gap-1.5">
-                            <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                              {entry.assignedToInitials}
-                            </div>
-                            <span className="text-slate-700 whitespace-nowrap">{entry.assignedTo}</span>
-                          </div>
-                        ) : (
-                          <span className="italic text-slate-400">{entry.assignedTo}</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">{entry.assignedDate}</td>
-                      <td className="px-3 py-2.5"><StatusBadge status={entry.status} /></td>
-                      <td className="px-3 py-2.5 text-slate-600">{entry.billed}</td>
-                      <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap font-mono">{entry.invoiceNo}</td>
-                      <td className="px-3 py-2.5 font-semibold text-slate-800 whitespace-nowrap">
-                        ₹{entry.amount.toLocaleString('en-IN')}
-                      </td>
-                      <td className="px-3 py-2.5"><PaymentBadge status={entry.paymentStatus} /></td>
-                      <td className="px-3 py-2.5 text-center">
-                        <div className="flex justify-center gap-1">
-                          <button
-                            title="Edit"
-                            onClick={(e) => { e.stopPropagation(); setEditingEntry(entry); }}
-                            className="text-slate-400 hover:text-primary transition-colors p-1 rounded hover:bg-primary/10"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            title="Delete"
-                            onClick={(e) => { e.stopPropagation(); setDeletingEntry({ id: entry.id, name: entry.customerName }); }}
-                            className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        {/* ── Data: Card list on mobile/tablet, Table on desktop ─────── */}
+        <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white shadow-sm">
 
-          {/* ── Pagination ──────────────────────────────────────────────────── */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 bg-white px-4 sm:px-6 py-4 gap-3">
-            <p className="text-sm text-slate-500 text-center sm:text-left">
-              Showing {paginated.length > 0 ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–
-              {Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} entries
-            </p>
-            <div className="flex justify-center gap-2 items-center">
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="rounded-lg border border-slate-200 px-3 py-1 text-sm font-medium hover:bg-slate-50 disabled:opacity-40"
-              >
-                Previous
-              </button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const page = totalPages <= 5 ? i + 1 : Math.max(1, currentPage - 2) + i;
-                if (page > totalPages) return null;
-                return (
-                  <button
-                    key={page}
-                    onClick={() => goToPage(page)}
-                    className={`rounded-lg px-3 py-1 text-sm font-medium border ${currentPage === page
-                      ? 'bg-primary text-white border-primary'
-                      : 'border-slate-200 hover:bg-slate-50'
-                      }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="rounded-lg border border-slate-200 px-3 py-1 text-sm font-medium hover:bg-slate-50 disabled:opacity-40"
-              >
-                Next
-              </button>
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-slate-400">
+              <RefreshCw className="w-5 h-5 animate-spin" />
+              <span className="text-sm">Loading from Firebase…</span>
             </div>
-          </div>
+
+          ) : paginated.length === 0 ? (
+            <div className="py-16 text-center text-slate-400 text-sm">
+              {entries.length === 0
+                ? 'No entries yet. Tap "Add Work" to create your first entry.'
+                : 'No entries match your current filters.'}
+            </div>
+
+          ) : (
+            <>
+              {/* ─── MOBILE / TABLET: Card list (hidden on lg) ─── */}
+              <div className="lg:hidden divide-y divide-slate-100">
+                {paginated.map((entry) => (
+                  <div
+                    key={entry.id}
+                    onClick={() => setViewingEntry(entry)}
+                    className="flex flex-col gap-2 px-4 py-4 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    {/* Top row: name + badges */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm truncate">{entry.customerName}</p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">{entry.areaOfWork}{entry.subParticular ? ` · ${entry.subParticular}` : ''}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <StatusBadge status={entry.status} />
+                      </div>
+                    </div>
+
+                    {/* Middle row: assigned + date */}
+                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                      {entry.assignedToInitials ? (
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+                            {entry.assignedToInitials}
+                          </div>
+                          <span>{entry.assignedTo}</span>
+                        </div>
+                      ) : (
+                        <span className="italic text-slate-400">{entry.assignedTo}</span>
+                      )}
+                      <span className="text-slate-300">·</span>
+                      <span>{entry.date}</span>
+                    </div>
+
+                    {/* Bottom row: invoice + amount + payment + actions */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="font-mono text-slate-400">{entry.invoiceNo}</span>
+                        <span className="font-semibold text-slate-800">₹{entry.amount.toLocaleString('en-IN')}</span>
+                        <PaymentBadge status={entry.paymentStatus} />
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          title="Edit"
+                          onClick={(e) => { e.stopPropagation(); setEditingEntry(entry); }}
+                          className="text-slate-400 hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/10"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          title="Delete"
+                          onClick={(e) => { e.stopPropagation(); setDeletingEntry({ id: entry.id, name: entry.customerName }); }}
+                          className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ─── DESKTOP: Full table (hidden below lg) ─── */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Date</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Customer Name</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Area of Work</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Sub Particular</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Assigned To</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Assigned Date</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Status</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Billed</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Invoice No</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Amount</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Payment</th>
+                      <th className="px-3 py-2.5 text-center whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {paginated.map((entry) => (
+                      <tr
+                        key={entry.id}
+                        onClick={() => setViewingEntry(entry)}
+                        className="bg-white hover:bg-slate-50/80 transition-colors cursor-pointer"
+                      >
+                        <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-500">{entry.date}</td>
+                        <td className="px-3 py-2.5 font-semibold text-slate-900 max-w-[120px] truncate">{entry.customerName}</td>
+                        <td className="px-3 py-2.5 text-slate-600 max-w-[100px] truncate">{entry.areaOfWork}</td>
+                        <td className="px-3 py-2.5 text-slate-600 max-w-[100px] truncate">{entry.subParticular}</td>
+                        <td className="px-3 py-2.5">
+                          {entry.assignedToInitials ? (
+                            <div className="flex items-center gap-1.5">
+                              <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+                                {entry.assignedToInitials}
+                              </div>
+                              <span className="text-slate-700 whitespace-nowrap">{entry.assignedTo}</span>
+                            </div>
+                          ) : (
+                            <span className="italic text-slate-400">{entry.assignedTo}</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">{entry.assignedDate}</td>
+                        <td className="px-3 py-2.5"><StatusBadge status={entry.status} /></td>
+                        <td className="px-3 py-2.5 text-slate-600">{entry.billed}</td>
+                        <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap font-mono">{entry.invoiceNo}</td>
+                        <td className="px-3 py-2.5 font-semibold text-slate-800 whitespace-nowrap">
+                          ₹{entry.amount.toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-3 py-2.5"><PaymentBadge status={entry.paymentStatus} /></td>
+                        <td className="px-3 py-2.5 text-center">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              title="Edit"
+                              onClick={(e) => { e.stopPropagation(); setEditingEntry(entry); }}
+                              className="text-slate-400 hover:text-primary transition-colors p-1 rounded hover:bg-primary/10"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              title="Delete"
+                              onClick={(e) => { e.stopPropagation(); setDeletingEntry({ id: entry.id, name: entry.customerName }); }}
+                              className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {/* ── Pagination ─────────────────────────────────────────────── */}
+          {!loading && filtered.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 px-4 py-3 gap-3">
+              <p className="text-xs text-slate-500 text-center sm:text-left">
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} entries
+              </p>
+              <div className="flex justify-center items-center gap-1.5">
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                </button>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const page = totalPages <= 5 ? i + 1 : Math.max(1, currentPage - 2) + i;
+                  if (page > totalPages) return null;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${currentPage === page ? 'bg-primary text-white border-primary' : 'border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                >
+                  Next <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* ── Modals ─────────────────────────────────────────────────────────── */}
+      {/* ── Modals ──────────────────────────────────────────────────────── */}
       <AddWorkModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
-      <EditWorkModal
-        entry={editingEntry}
-        onClose={() => setEditingEntry(null)}
-      />
+      <EditWorkModal entry={editingEntry} onClose={() => setEditingEntry(null)} />
       <DeleteConfirmModal
         entryId={deletingEntry?.id ?? null}
         entryName={deletingEntry?.name ?? ''}
         onClose={() => setDeletingEntry(null)}
       />
-      <DetailViewModal
-        entry={viewingEntry}
-        onClose={() => setViewingEntry(null)}
-      />
+      <DetailViewModal entry={viewingEntry} onClose={() => setViewingEntry(null)} />
     </div>
   );
 }
