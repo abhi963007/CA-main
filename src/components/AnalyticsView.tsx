@@ -73,11 +73,11 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
             <div className="flex-1 flex flex-col items-center justify-center -mt-10 overflow-hidden">
                 {/* 3D Container */}
                 <div
-                    className="relative w-full max-w-[800px] h-[500px] flex items-center justify-center"
-                    style={{ perspective: '1200px' }}
+                    className="relative w-full max-w-[1000px] h-[700px] flex items-center justify-center -mt-10"
+                    style={{ perspective: '1500px' }}
                 >
                     {/* The "Table" Surface for shadows */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-slate-900/5 rounded-full blur-3xl transform rotateX(65deg) translateZ(-50px)" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-slate-900/5 rounded-full blur-3xl transform rotateX(65deg) translateZ(-50px)" />
 
                     {/* The 3D Chart Group */}
                     <div
@@ -92,7 +92,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                             <div
                                 key={`depth-${i}`}
                                 className="absolute inset-0 pointer-events-none"
-                                style={{ transform: `translateZ(${-i * 1.5}px)` }}
+                                style={{ transform: `translateZ(${-i * 2.5}px)` }}
                             >
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
@@ -101,7 +101,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={0}
-                                            outerRadius="35%"
+                                            outerRadius="48%"
                                             dataKey="value"
                                             isAnimationActive={false}
                                             stroke="none"
@@ -126,7 +126,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                         data={data}
                                         cx="50%"
                                         cy="50%"
-                                        outerRadius="35%"
+                                        outerRadius="48%"
                                         dataKey="value"
                                         stroke="#ffffff"
                                         strokeWidth={1}
@@ -159,13 +159,13 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
 
                     {/* ── Floating Labels (Positioned in 2D to be readable) ── */}
                     <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                        <div className="w-full h-full relative max-w-[600px] max-h-[600px]">
+                        <div className="w-full h-full relative max-w-[800px] max-h-[800px]">
                             {data.map((entry, index) => {
                                 // Simple logic to spread labels around
                                 const angle = (index / data.length) * 360 - 90;
                                 const rad = angle * (Math.PI / 180);
-                                const x = 50 + 38 * Math.cos(rad);
-                                const y = 50 + 20 * Math.sin(rad); // Narrower Y to match tilted perspective
+                                const x = 50 + 48 * Math.cos(rad);
+                                const y = 50 + 28 * Math.sin(rad); // Narrower Y to match tilted perspective
 
                                 return (
                                     <motion.div
@@ -176,19 +176,19 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                         className="absolute flex flex-col items-center gap-1"
                                         style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
                                     >
-                                        <div className="bg-white/90 backdrop-blur-sm border border-slate-200 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2">
+                                        <div className="bg-white/90 backdrop-blur-sm border border-slate-200 px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
                                             <div
-                                                className="w-2.5 h-2.5 rounded-full"
+                                                className="w-3 h-3 rounded-full"
                                                 style={{ backgroundColor: STATUS_COLORS[entry.name] }}
                                             />
-                                            <p className="text-[11px] font-black text-slate-800 whitespace-nowrap">
+                                            <p className="text-xs font-black text-slate-800 whitespace-nowrap">
                                                 {entry.name}
                                                 <span className="ml-2 text-slate-400">
                                                     {Math.round((entry.value / entries.length) * 100)}%
                                                 </span>
                                             </p>
                                         </div>
-                                        <div className="h-4 w-px bg-slate-200" />
+                                        <div className="h-6 w-px bg-slate-200" />
                                     </motion.div>
                                 );
                             })}
@@ -197,7 +197,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                 </div>
 
                 {/* Legend / Metrics Grid */}
-                <div className="w-full max-w-5xl px-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="w-full max-w-5xl px-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 py-10">
                     {data.map((entry, index) => (
                         <motion.div
                             key={index}
