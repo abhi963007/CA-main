@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save, AlertCircle, RefreshCw } from 'lucide-react';
 import { subscribeToCustomers, subscribeToMembers, subscribeToWorkAreas } from '../services/dataPools';
 import { addEntry } from '../services/workEntries';
 import { Customer, Member, WorkArea, WorkStatus, PaymentStatus, BilledStatus } from '../types';
@@ -230,6 +230,20 @@ export default function AddWorkModal({ isOpen, onClose }: AddWorkModalProps) {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Payment Mode</label>
+                <CustomSelect
+                  value={paymentMode}
+                  onChange={setPaymentMode}
+                  placeholder="Select mode..."
+                  options={[
+                    { label: 'UPI', value: 'UPI' },
+                    { label: 'Bank Transfer', value: 'Bank Transfer' },
+                    { label: 'Cash', value: 'Cash' },
+                    { label: 'Cheque', value: 'Cheque' },
+                  ]}
+                />
               </div>
             </div>
           </section>
