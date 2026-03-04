@@ -30,7 +30,7 @@ export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Repor
 
     // Add Black Border/Margin
     doc.setDrawColor(0); // Black
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(1.5);
     doc.rect(5, 5, pageWidth - 10, pageHeight - 10); // 5mm padding frame
 
     // Add Logo
