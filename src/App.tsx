@@ -149,11 +149,7 @@ export default function App() {
       <header className="sticky top-0 z-30 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3 sm:px-6 lg:px-10 gap-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-10 w-auto items-center justify-center rounded-lg flex-shrink-0">
-            <img src={logoBase64} alt="Abraham & Kurian Logo" className="h-8 sm:h-10 w-auto object-contain" />
-          </div>
-          <div>
-            <h1 className="text-sm sm:text-lg font-bold leading-tight text-slate-900">Abraham & Kurian</h1>
-            <p className="text-[10px] text-slate-400 hidden sm:block">Chartered Accountants</p>
+            <img src={logoBase64} alt="Abraham & Kurian Logo" className="h-8 sm:h-12 w-auto object-contain" />
           </div>
         </div>
 
