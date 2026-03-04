@@ -91,6 +91,7 @@ export default function App() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const totalPending = entries.filter((e) => e.paymentStatus === 'Not Received').reduce((s, e) => s + e.amount, 0);
+  const totalReceived = entries.filter((e) => e.paymentStatus === 'Received').reduce((s, e) => s + e.amount, 0);
   const completedCount = entries.filter((e) => e.status === 'Completed').length;
   const activeFiltersCount = [statusFilter, paymentStatusFilter, billedFilter, assignedToFilter, dateFromFilter, dateToFilter].filter(Boolean).length;
 
@@ -164,22 +165,22 @@ export default function App() {
       <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 lg:px-10">
 
         {/* ── Summary Cards ────────────────────────────────────────────── */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4">
-          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-2.5 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Total</p>
               <BarChart2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
             </div>
-            <p className="text-lg sm:text-2xl font-bold text-slate-900">{loading ? '—' : entries.length.toLocaleString('en-IN')}</p>
+            <p className="text-sm sm:text-2xl font-bold text-slate-900">{loading ? '—' : entries.length.toLocaleString('en-IN')}</p>
             <p className="text-[9px] sm:text-xs text-slate-400 mt-0.5">{filtered.length} matching</p>
           </div>
 
-          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
+          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-2.5 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending</p>
               <Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
             </div>
-            <p className="text-lg sm:text-2xl font-bold text-slate-900 truncate">
+            <p className="text-sm sm:text-2xl font-bold text-slate-900 truncate">
               {loading ? '—' : `₹${totalPending.toLocaleString('en-IN')}`}
             </p>
             <p className="text-[9px] sm:text-xs text-slate-400 mt-0.5">
@@ -187,12 +188,25 @@ export default function App() {
             </p>
           </div>
 
-          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
+          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-2.5 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Received</p>
+              <Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
+            </div>
+            <p className="text-sm sm:text-2xl font-bold text-slate-900 truncate">
+              {loading ? '—' : `₹${totalReceived.toLocaleString('en-IN')}`}
+            </p>
+            <p className="text-[9px] sm:text-xs text-slate-400 mt-0.5">
+              {entries.filter((e) => e.paymentStatus === 'Received').length} received
+            </p>
+          </div>
+
+          <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-2.5 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Done</p>
               <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
             </div>
-            <p className="text-lg sm:text-2xl font-bold text-slate-900">{loading ? '—' : completedCount}</p>
+            <p className="text-sm sm:text-2xl font-bold text-slate-900">{loading ? '—' : completedCount}</p>
             <p className="text-[9px] sm:text-xs text-primary mt-0.5">
               {entries.length > 0 ? `${Math.round((completedCount / entries.length) * 100)}%` : '—'} rate
             </p>
