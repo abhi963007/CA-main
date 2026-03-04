@@ -181,9 +181,9 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                     const x1 = 50 + 40 * Math.cos(rad);
                                     const y1 = 50 + 20 * Math.sin(rad);
 
-                                    // Elbow point
-                                    const x2 = 50 + 52 * Math.cos(rad);
-                                    const y2 = 50 + 32 * Math.sin(rad);
+                                    // Elbow point - pushed further for better clarity
+                                    const x2 = 50 + 54 * Math.cos(rad);
+                                    const y2 = 50 + 34 * Math.sin(rad);
 
                                     return (
                                         <g key={`line-group-${index}`}>
@@ -192,17 +192,16 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                                 animate={{ pathLength: 1, opacity: 1 }}
                                                 transition={{ delay: 1 + index * 0.1, duration: 0.5 }}
                                                 d={`M ${x1}% ${y1}% L ${x2}% ${y2}%`}
-                                                stroke={STATUS_COLORS[entry.name]}
-                                                strokeWidth="1.5"
+                                                stroke="#1e293b"
+                                                strokeWidth="2.5"
                                                 fill="none"
-                                                strokeDasharray="4 2"
                                             />
                                             <motion.circle
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
                                                 transition={{ delay: 1 + index * 0.1 }}
-                                                cx={`${x1}%`} cy={`${y1}%`} r="3"
-                                                fill={STATUS_COLORS[entry.name]}
+                                                cx={`${x1}%`} cy={`${y1}%`} r="4"
+                                                fill="#1e293b"
                                             />
                                         </g>
                                     );
@@ -212,8 +211,8 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                             {/* Label boxes */}
                             {data.map((entry, index) => {
                                 const rad = entry.midAngle * (Math.PI / 180);
-                                const x = 50 + 52 * Math.cos(rad);
-                                const y = 50 + 32 * Math.sin(rad);
+                                const x = 50 + 54 * Math.cos(rad);
+                                const y = 50 + 34 * Math.sin(rad);
 
                                 return (
                                     <motion.div
