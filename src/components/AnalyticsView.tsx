@@ -171,47 +171,12 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                     {/* ── Floating Labels & Fixed 3D Lines ── */}
                     <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                         <div className="w-full h-full relative max-w-[1000px] max-h-[1000px]">
-                            {/* SVG Layer with viewBox for reliable rendering */}
-                            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full overflow-visible pointer-events-none">
-                                {data.map((entry, index) => {
-                                    const rad = entry.midAngle * (Math.PI / 180);
-
-                                    // Start point (Internal dot)
-                                    const x1 = 50 + 40 * Math.cos(rad);
-                                    const y1 = 50 + 20 * Math.sin(rad);
-
-                                    // End point (Label target)
-                                    const x2 = 50 + 54 * Math.cos(rad);
-                                    const y2 = 50 + 34 * Math.sin(rad);
-
-                                    return (
-                                        <g key={`line-group-${index}`}>
-                                            <motion.line
-                                                initial={{ pathLength: 0, opacity: 0 }}
-                                                animate={{ pathLength: 1, opacity: 1 }}
-                                                transition={{ delay: 1 + index * 0.1, duration: 0.6 }}
-                                                x1={x1} y1={y1} x2={x2} y2={y2}
-                                                stroke="#1e293b"
-                                                strokeWidth="0.8"
-                                                strokeLinecap="round"
-                                            />
-                                            <motion.circle
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                transition={{ delay: 1 + index * 0.1 }}
-                                                cx={x1} cy={y1} r="1.2"
-                                                fill="#1e293b"
-                                            />
-                                        </g>
-                                    );
-                                })}
-                            </svg>
 
                             {/* Label boxes - Positioned in % to match container */}
                             {data.map((entry, index) => {
                                 const rad = entry.midAngle * (Math.PI / 180);
-                                const x = 50 + 54 * Math.cos(rad);
-                                const y = 50 + 34 * Math.sin(rad);
+                                const x = 50 + 52 * Math.cos(rad);
+                                const y = 50 + 32 * Math.sin(rad);
 
                                 return (
                                     <motion.div
