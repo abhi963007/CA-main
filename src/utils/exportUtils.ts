@@ -40,7 +40,7 @@ export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Repor
             e.areaOfWork,
             e.assignedTo,
             e.status,
-            `₹${e.amount}`,
+            `Rs. ${e.amount.toLocaleString('en-IN')}`,
             e.paymentStatus
         ]),
         headStyles: { fillColor: [43, 89, 219] }, // Primary color
