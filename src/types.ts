@@ -1,9 +1,9 @@
-export type WorkStatus = 
-  | 'Completed' 
-  | 'Pending Approval' 
-  | 'Assigned' 
-  | 'Initiated' 
-  | 'Document Requested' 
+export type WorkStatus =
+  | 'Completed'
+  | 'Pending Approval'
+  | 'Assigned'
+  | 'Initiated'
+  | 'Document Requested'
   | 'Not Assigned';
 
 export type PaymentStatus = 'Received' | 'Not Received';
@@ -23,10 +23,30 @@ export interface WorkEntry {
   invoiceNo: string;
   amount: number;
   paymentStatus: PaymentStatus;
-  
+
   // Additional fields for Edit Modal
   description?: string;
   dueDate?: string;
   priority?: 'Low' | 'Medium' | 'High';
   paymentMode?: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface Member {
+  id: string;
+  name: string;
+  initials: string;
+  role?: string;
+}
+
+export interface WorkArea {
+  id: string;
+  name: string;
+  subParticulars: string[];
 }

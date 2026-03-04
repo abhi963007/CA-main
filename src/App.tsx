@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Landmark, Plus, BarChart2, Banknote, CheckCircle2,
   Search, Filter, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight,
+  Users, UserPlus, Briefcase
 } from 'lucide-react';
-import { WorkEntry } from './types';
+import { WorkEntry, Customer, Member, WorkArea } from './types';
 import { subscribeToEntries } from './services/workEntries';
+import { subscribeToCustomers, subscribeToMembers, subscribeToWorkAreas } from './services/dataPools';
 import AddWorkModal from './components/AddWorkModal';
 import EditWorkModal from './components/EditWorkModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
@@ -12,18 +14,32 @@ import DetailViewModal from './components/DetailViewModal';
 import CustomSelect from './components/CustomSelect';
 import { StatusBadge, PaymentBadge } from './components/Badges';
 
+// Manage Modals
+import AddCustomerModal from './components/AddCustomerModal';
+import AddMemberModal from './components/AddMemberModal';
+import AddWorkAreaModal from './components/AddWorkAreaModal';
+
 const PAGE_SIZE = 15;
 
 export default function App() {
   const [entries, setEntries] = useState<WorkEntry[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [workAreas, setWorkAreas] = useState<WorkArea[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [firebaseError, setFirebaseError] = useState('');
 
-  // Modals
+  // Primary Modals
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<WorkEntry | null>(null);
   const [viewingEntry, setViewingEntry] = useState<WorkEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<{ id: string; name: string } | null>(null);
+
+  // Pool Modals
+  const [isCustOpen, setIsCustOpen] = useState(false);
+  const [isMemberOpen, setIsMemberOpen] = useState(false);
+  const [isAreaOpen, setIsAreaOpen] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,24 +55,22 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    let unsub: (() => void) | undefined;
-    try {
-      setLoading(true);
-      unsub = subscribeToEntries((data) => {
-        setEntries(data);
-        setLoading(false);
-        setFirebaseError('');
-      });
-    } catch (err: any) {
-      setFirebaseError(err.message ?? 'Firebase connection failed.');
+    let unsubEntries = subscribeToEntries((data) => {
+      setEntries(data);
       setLoading(false);
-    }
-    return () => unsub?.();
-  }, []);
+    });
 
-  const assignedUsers: string[] = Array.from(new Set(entries.map((e) => e.assignedTo))).filter(
-    (u): u is string => !!u && u !== 'Unassigned'
-  );
+    let unsubCust = subscribeToCustomers(setCustomers);
+    let unsubMemb = subscribeToMembers(setMembers);
+    let unsubAreas = subscribeToWorkAreas(setWorkAreas);
+
+    return () => {
+      unsubEntries();
+      unsubCust();
+      unsubMemb();
+      unsubAreas();
+    };
+  }, []);
 
   const filtered = entries.filter((entry) => {
     const q = searchQuery.toLowerCase();
@@ -97,7 +111,7 @@ export default function App() {
     <div className="relative flex min-h-screen w-full flex-col bg-slate-50">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3 sm:px-6 lg:px-10">
+      <header className="sticky top-0 z-30 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3 sm:px-6 lg:px-10 gap-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white flex-shrink-0">
             <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -107,27 +121,50 @@ export default function App() {
             <p className="text-[10px] text-slate-400 hidden sm:block">Chartered Accountancy Office</p>
           </div>
         </div>
-        <button
-          onClick={() => setIsAddOpen(true)}
-          className="flex items-center gap-1.5 sm:gap-2 rounded-lg bg-primary px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white transition-opacity hover:opacity-90 flex-shrink-0"
-        >
-          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span>Add Work</span>
-        </button>
+
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          {/* Quick Management Buttons */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+            <button
+              onClick={() => setIsCustOpen(true)}
+              title="Add Customer"
+              className="p-1.5 sm:p-2 hover:bg-white hover:text-primary rounded-md transition-all text-slate-500 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cust</span>
+            </button>
+            <button
+              onClick={() => setIsMemberOpen(true)}
+              title="Add Member"
+              className="p-1.5 sm:p-2 hover:bg-white hover:text-primary rounded-md transition-all text-slate-500 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Member</span>
+            </button>
+            <button
+              onClick={() => setIsAreaOpen(true)}
+              title="Add Work Area"
+              className="p-1.5 sm:p-2 hover:bg-white hover:text-primary rounded-md transition-all text-slate-500 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Area</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => setIsAddOpen(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg bg-primary px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white transition-opacity hover:opacity-90 flex-shrink-0 shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Add Work</span>
+          </button>
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 lg:px-10">
 
-        {/* Firebase error */}
-        {firebaseError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs sm:text-sm text-red-700">
-            <span className="font-semibold">Firebase Error:</span> {firebaseError}
-          </div>
-        )}
-
         {/* ── Summary Cards ────────────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
-          {/* Total */}
           <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Total</p>
@@ -137,7 +174,6 @@ export default function App() {
             <p className="text-[9px] sm:text-xs text-slate-400 mt-0.5">{filtered.length} matching</p>
           </div>
 
-          {/* Pending */}
           <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Pending</p>
@@ -151,7 +187,6 @@ export default function App() {
             </p>
           </div>
 
-          {/* Completed */}
           <div className="flex flex-col rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-5 shadow-sm">
             <div className="flex items-center justify-between mb-1">
               <p className="text-[9px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">Done</p>
@@ -165,13 +200,11 @@ export default function App() {
         </div>
 
         {/* ── Filters ──────────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-3 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-4 shadow-sm">
-
-          {/* Search + mobile filter toggle */}
+        <div className="flex flex-col gap-3 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white p-3 sm:p-4 shadow-sm text-xs">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className="w-4 h-4 text-slate-400" />
+                <Search className="w-3.5 h-3.5 text-slate-400" />
               </div>
               <input
                 type="text"
@@ -181,24 +214,16 @@ export default function App() {
                 className="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm focus:border-primary outline-none"
               />
             </div>
-            {/* Mobile filter toggle */}
             <button
               onClick={() => setShowMobileFilters(f => !f)}
               className={`lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex-shrink-0 ${showMobileFilters || activeFiltersCount > 0 ? 'bg-primary text-white border-primary' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
             >
               <Filter className="w-4 h-4" />
               <span className="hidden sm:inline">Filters</span>
-              {activeFiltersCount > 0 && (
-                <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold ${showMobileFilters ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
-                  {activeFiltersCount}
-                </span>
-              )}
             </button>
           </div>
 
-          {/* Filter panel — always visible on lg+, toggle on mobile */}
           <div className={`${showMobileFilters ? 'flex' : 'hidden'} lg:flex flex-col gap-3`}>
-            {/* Row 1: Status / Payment / Billed */}
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex gap-3">
               <CustomSelect
                 value={statusFilter}
@@ -236,60 +261,54 @@ export default function App() {
               />
             </div>
 
-            {/* Row 2: Assigned To + Dates + Clear */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
               <CustomSelect
                 value={assignedToFilter}
                 onChange={(v) => { setAssignedToFilter(v); setCurrentPage(1); }}
                 placeholder="Assigned To"
                 className="w-full sm:w-auto sm:min-w-[150px]"
-                options={assignedUsers.map((u) => ({ label: u, value: u }))}
+                options={members.map((u) => ({ label: u.name, value: u.name }))}
               />
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <input
                   type="date"
                   value={dateFromFilter}
                   onChange={(e) => { setDateFromFilter(e.target.value); setCurrentPage(1); }}
-                  className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:border-primary outline-none text-slate-600"
+                  className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-xs focus:border-primary outline-none text-slate-600"
                 />
-                <span className="text-slate-400 text-xs flex-shrink-0">to</span>
+                <span className="text-slate-400 text-[10px] flex-shrink-0">to</span>
                 <input
                   type="date"
                   value={dateToFilter}
                   onChange={(e) => { setDateToFilter(e.target.value); setCurrentPage(1); }}
-                  className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:border-primary outline-none text-slate-600"
+                  className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-xs focus:border-primary outline-none text-slate-600"
                 />
               </div>
               <button
                 onClick={() => { clearFilters(); setShowMobileFilters(false); }}
-                className="w-full sm:w-auto sm:ml-auto flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                className="w-full sm:w-auto sm:ml-auto flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-3.5 h-3.5" />
                 Clear Filters
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── Data: Card list on mobile/tablet, Table on desktop ─────── */}
+        {/* ── Data ─────────────────────────────────────────────────────── */}
         <div className="overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white shadow-sm">
-
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-16 text-slate-400">
               <RefreshCw className="w-5 h-5 animate-spin" />
-              <span className="text-sm">Loading from Firebase…</span>
+              <span className="text-sm">Loading Data…</span>
             </div>
-
           ) : paginated.length === 0 ? (
             <div className="py-16 text-center text-slate-400 text-sm">
-              {entries.length === 0
-                ? 'No entries yet. Tap "Add Work" to create your first entry.'
-                : 'No entries match your current filters.'}
+              No entries found matching your criteria.
             </div>
-
           ) : (
             <>
-              {/* ─── MOBILE / TABLET: Card list (hidden on lg) ─── */}
+              {/* Card List (Mobile/Tablet) */}
               <div className="lg:hidden divide-y divide-slate-100">
                 {paginated.map((entry) => (
                   <div
@@ -297,75 +316,46 @@ export default function App() {
                     onClick={() => setViewingEntry(entry)}
                     className="flex flex-col gap-2 px-4 py-4 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
-                    {/* Top row: name + badges */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm truncate">{entry.customerName}</p>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">{entry.areaOfWork}{entry.subParticular ? ` · ${entry.subParticular}` : ''}</p>
+                        <p className="font-semibold text-slate-900 text-xs truncate">{entry.customerName}</p>
+                        <p className="text-[10px] text-slate-500 truncate mt-0.5">{entry.areaOfWork}{entry.subParticular ? ` · ${entry.subParticular}` : ''}</p>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <StatusBadge status={entry.status} />
-                      </div>
+                      <StatusBadge status={entry.status} />
                     </div>
-
-                    {/* Middle row: assigned + date */}
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                      {entry.assignedToInitials ? (
-                        <div className="flex items-center gap-1.5">
-                          <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                            {entry.assignedToInitials}
-                          </div>
-                          <span>{entry.assignedTo}</span>
+                    <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-1.5 grayscale opacity-70">
+                        <div className="h-4 w-4 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[8px] font-bold">
+                          {entry.assignedToInitials || '—'}
                         </div>
-                      ) : (
-                        <span className="italic text-slate-400">{entry.assignedTo}</span>
-                      )}
+                        <span>{entry.assignedTo}</span>
+                      </div>
                       <span className="text-slate-300">·</span>
                       <span>{entry.date}</span>
                     </div>
-
-                    {/* Bottom row: invoice + amount + payment + actions */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-3 text-xs">
+                    <div className="flex items-center justify-between mt-1">
+                      <div className="flex items-center gap-3 text-[10px]">
                         <span className="font-mono text-slate-400">{entry.invoiceNo}</span>
                         <span className="font-semibold text-slate-800">₹{entry.amount.toLocaleString('en-IN')}</span>
-                        <PaymentBadge status={entry.paymentStatus} />
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button
-                          title="Edit"
-                          onClick={(e) => { e.stopPropagation(); setEditingEntry(entry); }}
-                          className="text-slate-400 hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/10"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          title="Delete"
-                          onClick={(e) => { e.stopPropagation(); setDeletingEntry({ id: entry.id, name: entry.customerName }); }}
-                          className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <PaymentBadge status={entry.paymentStatus} />
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* ─── DESKTOP: Full table (hidden below lg) ─── */}
+              {/* Data Table (Desktop) */}
               <div className="hidden lg:block overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                <table className="w-full text-left text-[11px]">
+                  <thead className="bg-slate-50/80 border-b border-slate-200 text-[9px] font-bold uppercase tracking-wider text-slate-500">
                     <tr>
                       <th className="px-3 py-2.5 whitespace-nowrap">Date</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">Customer Name</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">Area of Work</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Customer</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Area</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Sub Particular</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">Assigned To</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">Assigned Date</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Assigned</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Status</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">Billed</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">Invoice No</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Invoice</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Amount</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Payment</th>
                       <th className="px-3 py-2.5 text-center whitespace-nowrap">Actions</th>
@@ -378,43 +368,26 @@ export default function App() {
                         onClick={() => setViewingEntry(entry)}
                         className="bg-white hover:bg-slate-50/80 transition-colors cursor-pointer"
                       >
-                        <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-500">{entry.date}</td>
-                        <td className="px-3 py-2.5 font-semibold text-slate-900 max-w-[120px] truncate">{entry.customerName}</td>
-                        <td className="px-3 py-2.5 text-slate-600 max-w-[100px] truncate">{entry.areaOfWork}</td>
-                        <td className="px-3 py-2.5 text-slate-600 max-w-[100px] truncate">{entry.subParticular}</td>
-                        <td className="px-3 py-2.5">
-                          {entry.assignedToInitials ? (
-                            <div className="flex items-center gap-1.5">
-                              <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                                {entry.assignedToInitials}
-                              </div>
-                              <span className="text-slate-700 whitespace-nowrap">{entry.assignedTo}</span>
-                            </div>
-                          ) : (
-                            <span className="italic text-slate-400">{entry.assignedTo}</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">{entry.assignedDate}</td>
-                        <td className="px-3 py-2.5"><StatusBadge status={entry.status} /></td>
-                        <td className="px-3 py-2.5 text-slate-600">{entry.billed}</td>
-                        <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap font-mono">{entry.invoiceNo}</td>
-                        <td className="px-3 py-2.5 font-semibold text-slate-800 whitespace-nowrap">
-                          ₹{entry.amount.toLocaleString('en-IN')}
-                        </td>
-                        <td className="px-3 py-2.5"><PaymentBadge status={entry.paymentStatus} /></td>
-                        <td className="px-3 py-2.5 text-center">
+                        <td className="whitespace-nowrap px-3 py-2 font-medium text-slate-500">{entry.date}</td>
+                        <td className="px-3 py-2 font-semibold text-slate-900 max-w-[120px] truncate">{entry.customerName}</td>
+                        <td className="px-3 py-2 text-slate-600 max-w-[100px] truncate">{entry.areaOfWork}</td>
+                        <td className="px-3 py-2 text-slate-500 max-w-[100px] truncate">{entry.subParticular}</td>
+                        <td className="px-3 py-2 text-slate-600 truncate max-w-[100px]">{entry.assignedTo}</td>
+                        <td className="px-3 py-2"><StatusBadge status={entry.status} /></td>
+                        <td className="px-3 py-2 text-slate-400 font-mono">{entry.invoiceNo}</td>
+                        <td className="px-3 py-2 font-bold text-slate-800">₹{entry.amount.toLocaleString('en-IN')}</td>
+                        <td className="px-3 py-2"><PaymentBadge status={entry.paymentStatus} /></td>
+                        <td className="px-3 py-2 text-center">
                           <div className="flex justify-center gap-1">
                             <button
-                              title="Edit"
                               onClick={(e) => { e.stopPropagation(); setEditingEntry(entry); }}
-                              className="text-slate-400 hover:text-primary transition-colors p-1 rounded hover:bg-primary/10"
+                              className="text-slate-400 hover:text-primary transition-colors p-1"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              title="Delete"
                               onClick={(e) => { e.stopPropagation(); setDeletingEntry({ id: entry.id, name: entry.customerName }); }}
-                              className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                              className="text-slate-400 hover:text-rose-500 transition-colors p-1"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -428,40 +401,37 @@ export default function App() {
             </>
           )}
 
-          {/* ── Pagination ─────────────────────────────────────────────── */}
+          {/* Pagination */}
           {!loading && filtered.length > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 px-4 py-3 gap-3">
-              <p className="text-xs text-slate-500 text-center sm:text-left">
-                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} entries
+            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 bg-white">
+              <p className="text-[10px] text-slate-500 italic">
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
               </p>
-              <div className="flex justify-center items-center gap-1.5">
+              <div className="flex gap-1">
                 <button
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                  className="p-1 px-2 border border-slate-200 rounded text-[10px] disabled:opacity-30 flex items-center gap-1"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                  <ChevronLeft className="w-3 h-3" /> Prev
                 </button>
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  const page = totalPages <= 5 ? i + 1 : Math.max(1, currentPage - 2) + i;
-                  if (page > totalPages) return null;
-                  return (
+                <div className="flex gap-0.5">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-medium border transition-colors ${currentPage === page ? 'bg-primary text-white border-primary' : 'border-slate-200 hover:bg-slate-50'
-                        }`}
+                      className={`w-6 h-6 flex items-center justify-center rounded text-[10px] border transition-colors ${currentPage === page ? 'bg-primary text-white border-primary' : 'border-slate-100'}`}
                     >
                       {page}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
                 <button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                  className="p-1 px-2 border border-slate-200 rounded text-[10px] disabled:opacity-30 flex items-center gap-1"
                 >
-                  Next <ChevronRight className="w-3.5 h-3.5" />
+                  Next <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -469,7 +439,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* ── Modals ──────────────────────────────────────────────────────── */}
+      {/* Primary Modals */}
       <AddWorkModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
       <EditWorkModal entry={editingEntry} onClose={() => setEditingEntry(null)} />
       <DeleteConfirmModal
@@ -478,6 +448,11 @@ export default function App() {
         onClose={() => setDeletingEntry(null)}
       />
       <DetailViewModal entry={viewingEntry} onClose={() => setViewingEntry(null)} />
+
+      {/* Pool Modals */}
+      <AddCustomerModal isOpen={isCustOpen} onClose={() => setIsCustOpen(false)} />
+      <AddMemberModal isOpen={isMemberOpen} onClose={() => setIsMemberOpen(false)} />
+      <AddWorkAreaModal isOpen={isAreaOpen} onClose={() => setIsAreaOpen(false)} />
     </div>
   );
 }

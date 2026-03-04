@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileEdit, Save, AlignLeft, CalendarClock } from 'lucide-react';
-import { WorkEntry } from '../types';
+import { X, Save, RefreshCw, AlertCircle } from 'lucide-react';
+import { subscribeToCustomers, subscribeToMembers, subscribeToWorkAreas } from '../services/dataPools';
+import { updateEntry } from '../services/workEntries';
+import { WorkEntry, Customer, Member, WorkArea, WorkStatus, PaymentStatus, BilledStatus } from '../types';
+import CustomSelect from './CustomSelect';
 
 interface EditWorkModalProps {
   entry: WorkEntry | null;
@@ -8,169 +11,281 @@ interface EditWorkModalProps {
 }
 
 export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
-  const [priority, setPriority] = useState<string>('Medium');
-  const [description, setDescription] = useState<string>('');
-  const [dueDate, setDueDate] = useState<string>('');
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [workAreas, setWorkAreas] = useState<WorkArea[]>([]);
 
+  // Form State
+  const [date, setDate] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [areaOfWork, setAreaOfWork] = useState('');
+  const [subParticular, setSubParticular] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [assignedDate, setAssignedDate] = useState('');
+  const [status, setStatus] = useState<WorkStatus>('Not Assigned');
+  const [billed, setBilled] = useState<BilledStatus>('No');
+  const [invoiceNo, setInvoiceNo] = useState('');
+  const [amount, setAmount] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('Not Received');
+  const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
+  const [description, setDescription] = useState('');
+  const [paymentMode, setPaymentMode] = useState('');
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  // 1. Snapshot listeners for dropdowns
+  useEffect(() => {
+    if (!entry) return;
+    const unsubCust = subscribeToCustomers(setCustomers);
+    const unsubMemb = subscribeToMembers(setMembers);
+    const unsubAreas = subscribeToWorkAreas(setWorkAreas);
+    return () => { unsubCust(); unsubMemb(); unsubAreas(); };
+  }, [entry]);
+
+  // 2. Initialize form when entry changes
   useEffect(() => {
     if (entry) {
+      setDate(entry.date || '');
+      setCustomerName(entry.customerName || '');
+      setAreaOfWork(entry.areaOfWork || '');
+      setSubParticular(entry.subParticular || '');
+      setAssignedTo(entry.assignedTo || '');
+      setAssignedDate(entry.assignedDate || '');
+      setStatus(entry.status || 'Not Assigned');
+      setBilled(entry.billed || 'No');
+      setInvoiceNo(entry.invoiceNo === '—' ? '' : entry.invoiceNo);
+      setAmount(entry.amount?.toString() || '');
+      setPaymentStatus(entry.paymentStatus || 'Not Received');
       setPriority(entry.priority || 'Medium');
-      setDescription(entry.description || 'Monthly GST filing for the period of October 2023. All documents received from client via email.');
-      setDueDate(entry.dueDate || '2023-11-20');
+      setDescription(entry.description || '');
+      setPaymentMode(entry.paymentMode || '');
     }
   }, [entry]);
 
+  // Derived: Sub Particulars based on selected Area
+  const selectedAreaObj = workAreas.find(a => a.name === areaOfWork);
+  const subOptions = selectedAreaObj?.subParticulars || [];
+
   if (!entry) return null;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!customerName || !areaOfWork) {
+      setError('Please select at least Customer and Work Area');
+      return;
+    }
+
+    setIsSaving(true);
+    setError('');
+
+    const assignedMember = members.find(m => m.name === assignedTo);
+
+    try {
+      await updateEntry(entry.id, {
+        date,
+        customerName,
+        areaOfWork,
+        subParticular,
+        assignedTo: assignedTo || 'Unassigned',
+        assignedToInitials: assignedMember?.initials || entry.assignedToInitials,
+        assignedDate,
+        status,
+        billed,
+        invoiceNo: invoiceNo || '—',
+        amount: Number(amount) || 0,
+        paymentStatus,
+        priority,
+        description,
+        paymentMode
+      });
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update work entry');
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-[2px] p-4">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200">
+
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-white">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-xl">
-              <FileEdit className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold leading-tight tracking-tight text-slate-900">Edit Work</h2>
-              <p className="text-xs text-slate-500 font-medium">Update task details for CA Office Management</p>
-            </div>
+        <header className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Edit Work Task</h2>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">Modify task and assignment details</p>
           </div>
-          <button onClick={onClose} className="flex items-center justify-center rounded-full h-10 w-10 hover:bg-slate-100 transition-colors text-slate-500">
+          <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-400">
             <X className="w-5 h-5" />
           </button>
         </header>
 
-        {/* Form Content */}
-        <div className="p-6 space-y-8 overflow-y-auto max-h-[70vh]">
-          
-          {/* Section 1: General Information */}
-          <section>
-            <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider flex items-center gap-2">
-              <FileEdit className="w-4 h-4" />
-              General Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Customer Selection */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-700">Customer</label>
-                <select defaultValue={entry.customerName} className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 transition-all border outline-none">
-                  <option value={entry.customerName}>{entry.customerName}</option>
-                  <option value="XYZ Ltd">XYZ Ltd</option>
-                  <option value="Global Industries">Global Industries</option>
-                </select>
-              </div>
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[75vh] space-y-8">
 
-              {/* Area/Service Selection */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-700">Area</label>
-                <select defaultValue={entry.areaOfWork} className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 transition-all border outline-none">
-                  <option value={entry.areaOfWork}>{entry.areaOfWork}</option>
-                  <option value="Income Tax Audit">Income Tax Audit</option>
-                  <option value="TDS Return">TDS Return</option>
-                  <option value="ROC Compliance">ROC Compliance</option>
-                </select>
-              </div>
-
-              {/* Status Selection */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-700">Status</label>
-                <select defaultValue={entry.status} className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 transition-all border outline-none">
-                  <option value="Draft">Draft</option>
-                  <option value="Pending Approval">Pending for Approval</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-
-              {/* Amount Input */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-700">Amount (₹)</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">₹</span>
-                  <input type="text" defaultValue={entry.amount.toLocaleString('en-IN')} className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 pl-8 pr-4 transition-all border outline-none" />
-                </div>
-              </div>
+          {error && (
+            <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-center gap-2 text-rose-600 text-sm font-medium">
+              <AlertCircle className="w-4 h-4" />
+              {error}
             </div>
-          </section>
+          )}
 
-          <hr className="border-slate-100" />
-
-          {/* Section 2: Work Details */}
-          <section>
-            <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider flex items-center gap-2">
-              <AlignLeft className="w-4 h-4" />
+          {/* Section 1: Basic Info */}
+          <section className="space-y-4">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-primary"></span>
               Work Details
             </h3>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-slate-700">Description / Notes</label>
-              <textarea 
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary p-4 transition-all border outline-none resize-none" 
-                placeholder="Enter any specific instructions or notes..." 
-                rows={3}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Entry Date</label>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:bg-white focus:border-primary outline-none transition-all border" />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Customer Name *</label>
+                <CustomSelect
+                  value={customerName}
+                  onChange={setCustomerName}
+                  placeholder="Choose Customer..."
+                  options={customers.map(c => ({ label: c.name, value: c.name }))}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Area of Work *</label>
+                <CustomSelect
+                  value={areaOfWork}
+                  onChange={(v) => { setAreaOfWork(v); setSubParticular(''); }}
+                  placeholder="Select Service..."
+                  options={workAreas.map(a => ({ label: a.name, value: a.name }))}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Sub Particular</label>
+                <CustomSelect
+                  value={subParticular}
+                  onChange={setSubParticular}
+                  placeholder={areaOfWork ? "Choose Sub..." : "Select Area First"}
+                  options={subOptions.map(s => ({ label: s, value: s }))}
+                />
+              </div>
             </div>
           </section>
 
-          <hr className="border-slate-100" />
-
-          {/* Section 3: Scheduling & Priority */}
-          <section>
-            <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider flex items-center gap-2">
-              <CalendarClock className="w-4 h-4" />
-              Scheduling & Priority
+          {/* Section 2: Assignment & Status */}
+          <section className="space-y-4">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-green-400"></span>
+              Execution & Billing
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-700">Due Date</label>
-                <input 
-                  type="date" 
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-slate-900 focus:ring-2 focus:ring-primary focus:border-primary h-12 px-4 transition-all border outline-none" 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Assigned To</label>
+                <CustomSelect
+                  value={assignedTo}
+                  onChange={setAssignedTo}
+                  placeholder="Select Member..."
+                  options={members.map(m => ({ label: m.name, value: m.name }))}
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-slate-700">Priority Level</label>
-                <div className="flex gap-2">
-                  <button 
-                    type="button" 
-                    onClick={() => setPriority('Low')}
-                    className={`flex-1 py-2 px-3 border rounded-xl text-sm font-medium transition-colors ${priority === 'Low' ? 'bg-primary/10 border-primary text-primary font-bold' : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'}`}
-                  >
-                    Low
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => setPriority('Medium')}
-                    className={`flex-1 py-2 px-3 border rounded-xl text-sm font-medium transition-colors ${priority === 'Medium' ? 'bg-primary/10 border-primary text-primary font-bold' : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'}`}
-                  >
-                    Medium
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => setPriority('High')}
-                    className={`flex-1 py-2 px-3 border rounded-xl text-sm font-medium transition-colors ${priority === 'High' ? 'bg-primary/10 border-primary text-primary font-bold' : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600'}`}
-                  >
-                    High
-                  </button>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Status</label>
+                <CustomSelect
+                  value={status}
+                  onChange={(v) => setStatus(v as WorkStatus)}
+                  placeholder="Select Status..."
+                  options={[
+                    { label: 'Assigned', value: 'Assigned' },
+                    { label: 'Not Assigned', value: 'Not Assigned' },
+                    { label: 'Initiated', value: 'Initiated' },
+                    { label: 'Document Requested', value: 'Document Requested' },
+                    { label: 'Pending Approval', value: 'Pending Approval' },
+                    { label: 'Completed', value: 'Completed' },
+                  ]}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Billed</label>
+                  <CustomSelect
+                    value={billed}
+                    onChange={v => setBilled(v as BilledStatus)}
+                    placeholder="..."
+                    options={[{ label: 'Yes', value: 'Yes' }, { label: 'No', value: 'No' }]}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Amount (₹)</label>
+                  <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="w-full rounded-xl border-slate-200 bg-slate-50 py-2 px-3 text-sm focus:bg-white focus:border-primary outline-none transition-all border" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Payment Status</label>
+                <CustomSelect
+                  value={paymentStatus}
+                  onChange={v => setPaymentStatus(v as PaymentStatus)}
+                  placeholder="..."
+                  options={[{ label: 'Received', value: 'Received' }, { label: 'Not Received', value: 'Not Received' }]}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Invoice No</label>
+                <input type="text" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} placeholder="INV/..." className="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:bg-white focus:border-primary outline-none transition-all border font-mono" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Priority</label>
+                <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
+                  {['Low', 'Medium', 'High'].map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPriority(p as any)}
+                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${priority === p ? 'bg-white shadow-sm text-primary' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
           </section>
 
-        </div>
+          <section>
+            <label className="text-xs font-bold text-slate-700 block mb-1.5">Additional Notes</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={2}
+              placeholder="Enter special instructions..."
+              className="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:bg-white focus:border-primary outline-none transition-all border resize-none"
+            />
+          </section>
+        </form>
 
         {/* Footer */}
-        <footer className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-white">
-          <button onClick={onClose} className="px-6 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold transition-colors">
-            Cancel
+        <footer className="px-6 py-5 border-t border-slate-100 flex items-center justify-end gap-3 bg-white">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2.5 text-sm font-bold text-slate-400 hover:bg-slate-50 rounded-xl transition-all"
+          >
+            Discard
           </button>
-          <button onClick={onClose} className="px-8 py-2.5 rounded-xl bg-primary text-white hover:bg-primary/90 font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
-            <Save className="w-5 h-5" />
-            Save Changes
+          <button
+            onClick={handleSubmit}
+            disabled={isSaving}
+            className="px-8 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-primary/20 flex items-center gap-2"
+          >
+            {isSaving ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSaving ? 'Updating...' : 'Save Changes'}
           </button>
         </footer>
       </div>
