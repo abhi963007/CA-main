@@ -50,6 +50,7 @@ export default function App() {
   const [assignedToFilter, setAssignedToFilter] = useState('');
   const [dateFromFilter, setDateFromFilter] = useState('');
   const [dateToFilter, setDateToFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState(''); // YYYY-MM
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Pagination
@@ -104,8 +105,39 @@ export default function App() {
     setAssignedToFilter('');
     setDateFromFilter('');
     setDateToFilter('');
+    setMonthFilter('');
+    setCurrentPage(1);
+    setShowMobileFilters(false);
+  };
+
+  const handleMonthChange = (val: string) => {
+    setMonthFilter(val);
+    if (val) {
+      const [year, month] = val.split('-').map(Number);
+      const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).toISOString().split('T')[0];
+      setDateFromFilter(firstDay);
+      setDateToFilter(lastDay);
+    } else {
+      setDateFromFilter('');
+      setDateToFilter('');
+    }
     setCurrentPage(1);
   };
+
+  const monthOptions = (() => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+      const value = `${y}-${String(m).padStart(2, '0')}`;
+      options.push({ label, value });
+    }
+    return options;
+  })();
 
   const goToPage = (p: number) => setCurrentPage(Math.max(1, Math.min(p, totalPages)));
 
@@ -300,20 +332,32 @@ export default function App() {
                 className="w-full sm:w-auto sm:min-w-[150px]"
                 options={members.map((u) => ({ label: u.name, value: u.name }))}
               />
+              <CustomSelect
+                value={monthFilter}
+                onChange={handleMonthChange}
+                placeholder="Choose Month"
+                className="w-full sm:w-auto sm:min-w-[160px]"
+                options={monthOptions}
+              />
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <input
-                  type="date"
-                  value={dateFromFilter}
-                  onChange={(e) => { setDateFromFilter(e.target.value); setCurrentPage(1); }}
-                  className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-xs focus:border-primary outline-none text-slate-600"
-                />
-                <span className="text-slate-400 text-[10px] flex-shrink-0">to</span>
-                <input
-                  type="date"
-                  value={dateToFilter}
-                  onChange={(e) => { setDateToFilter(e.target.value); setCurrentPage(1); }}
-                  className="block flex-1 sm:flex-initial rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-xs focus:border-primary outline-none text-slate-600"
-                />
+                <div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+                  <span className="text-[10px] text-slate-400 font-medium">From:</span>
+                  <input
+                    type="date"
+                    value={dateFromFilter}
+                    onChange={(e) => { setDateFromFilter(e.target.value); setMonthFilter(''); setCurrentPage(1); }}
+                    className="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-xs focus:border-primary outline-none text-slate-600"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+                  <span className="text-[10px] text-slate-400 font-medium">To:</span>
+                  <input
+                    type="date"
+                    value={dateToFilter}
+                    onChange={(e) => { setDateToFilter(e.target.value); setMonthFilter(''); setCurrentPage(1); }}
+                    className="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 px-3 text-xs focus:border-primary outline-none text-slate-600"
+                  />
+                </div>
               </div>
               <button
                 onClick={() => { clearFilters(); setShowMobileFilters(false); }}
