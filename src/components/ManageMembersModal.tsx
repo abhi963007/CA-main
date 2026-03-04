@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserCheck, Trash2, Search, Users } from 'lucide-react';
+import { X, UserCheck, Trash2, Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { subscribeToMembers, addMember, deleteMember } from '../services/dataPools';
 import { Member } from '../types';
 
@@ -11,6 +11,8 @@ interface ManageMembersModalProps {
 export default function ManageMembersModal({ isOpen, onClose }: ManageMembersModalProps) {
     const [members, setMembers] = useState<Member[]>([]);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const ITEMS_PER_PAGE = 6;
 
     // Add form
     const [name, setName] = useState('');
@@ -36,6 +38,9 @@ export default function ManageMembersModal({ isOpen, onClose }: ManageMembersMod
     const filtered = members.filter(m =>
         m.name.toLowerCase().includes(search.toLowerCase())
     );
+
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-[2px] p-4">
@@ -65,14 +70,14 @@ export default function ManageMembersModal({ isOpen, onClose }: ManageMembersMod
                                     type="text"
                                     placeholder="Search members..."
                                     value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                    className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-sm focus:border-primary outline-none"
+                                    onChange={e => { setSearch(e.target.value); setPage(1); }}
+                                    className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-sm focus:border-primary outline-none transition-all shadow-sm"
                                 />
                             </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                            {filtered.map(m => {
+                            {paginated.map(m => {
                                 const displayInitials = m.initials || m.name.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase();
                                 return (
                                     <div key={m.id} className="group flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-primary/20 hover:bg-slate-50 transition-all">
@@ -99,6 +104,31 @@ export default function ManageMembersModal({ isOpen, onClose }: ManageMembersMod
                                 </div>
                             )}
                         </div>
+
+                        {/* Pagination Sub-footer */}
+                        {totalPages > 1 && (
+                            <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                                    Page {page} of {totalPages}
+                                </span>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        disabled={page === 1}
+                                        className="p-1 rounded-md border border-slate-200 bg-white text-slate-500 disabled:opacity-30 hover:bg-slate-50 transition-colors shadow-sm"
+                                    >
+                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={page === totalPages}
+                                        className="p-1 rounded-md border border-slate-200 bg-white text-slate-500 disabled:opacity-30 hover:bg-slate-50 transition-colors shadow-sm"
+                                    >
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Add Section */}

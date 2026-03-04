@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Briefcase, Trash2, Search, Plus, ChevronRight } from 'lucide-react';
+import { X, Briefcase, Trash2, Search, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 import { subscribeToWorkAreas, addWorkArea, deleteWorkArea, addSubParticular, removeSubParticular } from '../services/dataPools';
 import { WorkArea } from '../types';
 
@@ -11,6 +11,10 @@ interface ManageAreasModalProps {
 export default function ManageAreasModal({ isOpen, onClose }: ManageAreasModalProps) {
     const [areas, setAreas] = useState<WorkArea[]>([]);
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const ITEMS_PER_PAGE = 8;
+    const [subPage, setSubPage] = useState(1);
+    const SUB_ITEMS_PER_PAGE = 5;
     const [selectedArea, setSelectedArea] = useState<WorkArea | null>(null);
 
     // Add Area form
@@ -24,6 +28,10 @@ export default function ManageAreasModal({ isOpen, onClose }: ManageAreasModalPr
         if (!isOpen) return;
         return subscribeToWorkAreas(setAreas);
     }, [isOpen]);
+
+    useEffect(() => {
+        setSubPage(1);
+    }, [selectedArea?.id]);
 
     if (!isOpen) return null;
 
@@ -56,6 +64,9 @@ export default function ManageAreasModal({ isOpen, onClose }: ManageAreasModalPr
         a.name.toLowerCase().includes(search.toLowerCase())
     );
 
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-[2px] p-4">
             <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 h-[80vh]">
@@ -81,8 +92,8 @@ export default function ManageAreasModal({ isOpen, onClose }: ManageAreasModalPr
                             <div className="relative">
                                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                                 <input
-                                    type="text" placeholder="Search areas..." value={search} onChange={e => setSearch(e.target.value)}
-                                    className="w-full bg-white border border-slate-200 rounded-lg py-1.5 pl-8 pr-2 focus:border-primary outline-none"
+                                    type="text" placeholder="Search areas..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+                                    className="w-full bg-white border border-slate-200 rounded-lg py-1.5 pl-8 pr-2 focus:border-primary outline-none transition-all"
                                 />
                             </div>
                             <div className="flex gap-1.5">
@@ -100,7 +111,7 @@ export default function ManageAreasModal({ isOpen, onClose }: ManageAreasModalPr
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                            {filtered.map(a => (
+                            {paginated.map(a => (
                                 <div key={a.id} className="flex group">
                                     <button
                                         onClick={() => setSelectedArea(a)}
@@ -118,6 +129,31 @@ export default function ManageAreasModal({ isOpen, onClose }: ManageAreasModalPr
                                 </div>
                             ))}
                         </div>
+
+                        {/* Pagination Sub-footer */}
+                        {totalPages > 1 && (
+                            <div className="px-3 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                                    Page {page} of {totalPages}
+                                </span>
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        disabled={page === 1}
+                                        className="p-1 rounded-md border border-slate-200 bg-white text-slate-500 disabled:opacity-30 hover:bg-slate-50 transition-colors shadow-sm"
+                                    >
+                                        <ChevronLeft className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={page === totalPages}
+                                        className="p-1 rounded-md border border-slate-200 bg-white text-slate-500 disabled:opacity-30 hover:bg-slate-50 transition-colors shadow-sm"
+                                    >
+                                        <ChevronRight className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Sub-Particulars Section */}
@@ -146,19 +182,50 @@ export default function ManageAreasModal({ isOpen, onClose }: ManageAreasModalPr
                                         </button>
                                     </div>
 
-                                    <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                                    <div className="space-y-2 pr-1 h-full min-h-[30vh]">
                                         {selectedArea.subParticulars.length > 0 ? (
-                                            selectedArea.subParticulars.map((s, idx) => (
-                                                <div key={idx} className="flex items-center justify-between bg-white border border-slate-200/60 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
-                                                    <span className="text-slate-700 font-medium">{s}</span>
-                                                    <button
-                                                        onClick={() => handleDeleteSub(s)}
-                                                        className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            ))
+                                            (() => {
+                                                const subTotalPages = Math.ceil(selectedArea.subParticulars.length / SUB_ITEMS_PER_PAGE);
+                                                const subPaginated = selectedArea.subParticulars.slice((subPage - 1) * SUB_ITEMS_PER_PAGE, subPage * SUB_ITEMS_PER_PAGE);
+
+                                                return (
+                                                    <>
+                                                        {subPaginated.map((s, idx) => (
+                                                            <div key={idx} className="flex items-center justify-between bg-white border border-slate-200/60 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+                                                                <span className="text-slate-700 font-medium">{s}</span>
+                                                                <button
+                                                                    onClick={() => handleDeleteSub(s)}
+                                                                    className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+
+                                                        {subTotalPages > 1 && (
+                                                            <div className="mt-4 flex items-center justify-between py-2 border-t border-slate-100 border-dashed">
+                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Page {subPage} of {subTotalPages}</span>
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        onClick={() => setSubPage(p => Math.max(1, p - 1))}
+                                                                        disabled={subPage === 1}
+                                                                        className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 disabled:opacity-30 hover:bg-slate-50 shadow-sm"
+                                                                    >
+                                                                        <ChevronLeft className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setSubPage(p => Math.min(subTotalPages, p + 1))}
+                                                                        disabled={subPage === subTotalPages}
+                                                                        className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 disabled:opacity-30 hover:bg-slate-50 shadow-sm"
+                                                                    >
+                                                                        <ChevronRight className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()
                                         ) : (
                                             <div className="text-center py-10 bg-slate-100/50 rounded-2xl border border-dashed border-slate-200">
                                                 <p className="text-slate-400 font-medium italic">No sub-particulars yet.</p>
