@@ -195,25 +195,6 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                     </div>
                 </div>
 
-                {/* Legend Grid Below */}
-                <div className="w-full max-w-7xl px-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 py-6 -mt-10">
-                    {data.map((entry, index) => (
-                        <motion.div
-                            key={index}
-                            whileHover={{ y: -5 }}
-                            className="bg-white p-4 rounded-3xl border border-slate-200/60 shadow-sm flex flex-col items-center justify-center gap-1 text-center"
-                        >
-                            <div
-                                className="w-10 h-10 rounded-xl mb-1 flex items-center justify-center text-white font-black text-sm"
-                                style={{ backgroundColor: STATUS_COLORS[entry.name] }}
-                            >
-                                {entry.value}
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter leading-none">{entry.name}</p>
-                            <p className="text-xs font-black text-slate-900 mt-1">{Math.round((entry.value / entries.length) * 100)}%</p>
-                        </motion.div>
-                    ))}
-                </div>
             </div>
         </motion.div>
     );
