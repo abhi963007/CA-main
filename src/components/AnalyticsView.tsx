@@ -14,12 +14,12 @@ interface AnalyticsViewProps {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-    'Completed': '#84cc16',         // Lime Green (Marketing-like)
-    'Pending Approval': '#fbbf24',  // Amber (Travel-like)
-    'Assigned': '#0ea5e9',         // Sky Blue (Infrastructure-like)
-    'Initiated': '#8b5cf6',        // Purple
-    'Document Requested': '#ec4899',// Pink
-    'Not Assigned': '#f43f5e',     // Rose (Others-like)
+    'Completed': '#84cc16',
+    'Pending Approval': '#fbbf24',
+    'Assigned': '#0ea5e9',
+    'Initiated': '#8b5cf6',
+    'Document Requested': '#ec4899',
+    'Not Assigned': '#f43f5e',
 };
 
 const SHADOW_COLORS: Record<string, string> = {
@@ -71,13 +71,13 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center -mt-10 overflow-hidden">
-                {/* 3D Container */}
+                {/* 3D Container - Increased further to max-w-1200 and h-800 */}
                 <div
-                    className="relative w-full max-w-[1000px] h-[700px] flex items-center justify-center -mt-10"
-                    style={{ perspective: '1500px' }}
+                    className="relative w-full max-w-[1200px] h-[800px] flex items-center justify-center -mt-20"
+                    style={{ perspective: '1800px' }}
                 >
                     {/* The "Table" Surface for shadows */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-slate-900/5 rounded-full blur-3xl transform rotateX(65deg) translateZ(-50px)" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-slate-900/5 rounded-full blur-3xl transform rotateX(65deg) translateZ(-50px)" />
 
                     {/* The 3D Chart Group */}
                     <div
@@ -87,8 +87,8 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                             transform: 'rotateX(55deg) rotateZ(0deg)',
                         }}
                     >
-                        {/* ── Thickness Layers (Draw multiple stacked slices for real depth) ── */}
-                        {[...Array(15)].map((_, i) => (
+                        {/* ── Thickness Layers ── */}
+                        {[...Array(18)].map((_, i) => (
                             <div
                                 key={`depth-${i}`}
                                 className="absolute inset-0 pointer-events-none"
@@ -101,7 +101,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={0}
-                                            outerRadius="48%"
+                                            outerRadius="55%"
                                             dataKey="value"
                                             isAnimationActive={false}
                                             stroke="none"
@@ -118,7 +118,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                             </div>
                         ))}
 
-                        {/* ── Top Layer (The actual interactive surface) ── */}
+                        {/* ── Top Layer ── */}
                         <div className="absolute inset-0" style={{ transform: 'translateZ(1px)' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -126,7 +126,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                         data={data}
                                         cx="50%"
                                         cy="50%"
-                                        outerRadius="48%"
+                                        outerRadius="55%"
                                         dataKey="value"
                                         stroke="#ffffff"
                                         strokeWidth={1}
@@ -146,7 +146,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                             borderRadius: '16px',
                                             border: 'none',
                                             boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                                            transform: 'rotateX(-55deg) translateZ(100px)', // Counter rotate tooltip
+                                            transform: 'rotateX(-55deg) translateZ(100px)',
                                             background: 'rgba(255, 255, 255, 0.95)',
                                             backdropFilter: 'blur(8px)'
                                         }}
@@ -157,15 +157,14 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                         </div>
                     </div>
 
-                    {/* ── Floating Labels (Positioned in 2D to be readable) ── */}
+                    {/* ── Floating Labels ── */}
                     <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                        <div className="w-full h-full relative max-w-[800px] max-h-[800px]">
+                        <div className="w-full h-full relative max-w-[900px] max-h-[900px]">
                             {data.map((entry, index) => {
-                                // Simple logic to spread labels around
                                 const angle = (index / data.length) * 360 - 90;
                                 const rad = angle * (Math.PI / 180);
-                                const x = 50 + 48 * Math.cos(rad);
-                                const y = 50 + 28 * Math.sin(rad); // Narrower Y to match tilted perspective
+                                const x = 50 + 52 * Math.cos(rad);
+                                const y = 50 + 32 * Math.sin(rad);
 
                                 return (
                                     <motion.div
@@ -176,7 +175,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                         className="absolute flex flex-col items-center gap-1"
                                         style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
                                     >
-                                        <div className="bg-white/90 backdrop-blur-sm border border-slate-200 px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                                        <div className="bg-white/95 backdrop-blur-sm border border-slate-200 px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
                                             <div
                                                 className="w-3 h-3 rounded-full"
                                                 style={{ backgroundColor: STATUS_COLORS[entry.name] }}
@@ -188,7 +187,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                                 </span>
                                             </p>
                                         </div>
-                                        <div className="h-6 w-px bg-slate-200" />
+                                        <div className="h-8 w-px bg-slate-200" />
                                     </motion.div>
                                 );
                             })}
@@ -196,8 +195,8 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                     </div>
                 </div>
 
-                {/* Legend / Metrics Grid */}
-                <div className="w-full max-w-5xl px-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 py-10">
+                {/* Legend Grid Below */}
+                <div className="w-full max-w-7xl px-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 py-6 -mt-10">
                     {data.map((entry, index) => (
                         <motion.div
                             key={index}
@@ -205,7 +204,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                             className="bg-white p-4 rounded-3xl border border-slate-200/60 shadow-sm flex flex-col items-center justify-center gap-1 text-center"
                         >
                             <div
-                                className="w-8 h-8 rounded-xl mb-1 flex items-center justify-center text-white font-bold"
+                                className="w-10 h-10 rounded-xl mb-1 flex items-center justify-center text-white font-black text-sm"
                                 style={{ backgroundColor: STATUS_COLORS[entry.name] }}
                             >
                                 {entry.value}
