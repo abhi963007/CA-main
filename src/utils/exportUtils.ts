@@ -25,6 +25,13 @@ export const exportToExcel = (data: WorkEntry[], fileName: string = 'CA_Work_Rep
 
 export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Report') => {
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+
+    // Add Black Border/Margin
+    doc.setDrawColor(0); // Black
+    doc.setLineWidth(0.5);
+    doc.rect(5, 5, pageWidth - 10, pageHeight - 10); // 5mm padding frame
 
     // Add Logo
     try {
