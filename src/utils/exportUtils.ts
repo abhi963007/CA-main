@@ -26,13 +26,15 @@ export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Repor
     const doc = new jsPDF();
 
     doc.setFontSize(18);
-    doc.text('CA Office Work Report', 14, 22);
-    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59); // Slate 800
+    doc.text('Abhram and Kurian', 15, 22);
+
+    doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+    doc.text(`Work Management Report - Generated on: ${new Date().toLocaleDateString()}`, 15, 30);
 
     autoTable(doc, {
-        startY: 35,
+        startY: 38,
         head: [['Date', 'Customer', 'Service', 'Assigned', 'Status', 'Amount', 'Payment']],
         body: data.map(e => [
             e.date,
@@ -43,9 +45,18 @@ export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Repor
             `Rs. ${e.amount.toLocaleString('en-IN')}`,
             e.paymentStatus
         ]),
-        headStyles: { fillColor: [43, 89, 219] }, // Primary color
+        headStyles: {
+            fillColor: [43, 89, 219],
+            fontSize: 9,
+            cellPadding: 3
+        },
+        bodyStyles: {
+            fontSize: 8,
+            cellPadding: 2
+        },
         alternateRowStyles: { fillColor: [248, 250, 252] },
-        margin: { top: 35 },
+        margin: { top: 40, right: 15, bottom: 15, left: 15 },
+        styles: { font: 'helvetica' }
     });
 
     doc.save(`${fileName}.pdf`);
