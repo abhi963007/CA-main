@@ -1,0 +1,5 @@
+{
+  "name": "CA Office Work Management",
+  "description": "A management system for CA offices to track work, invoices, and payments.",
+  "requestFramePermissions": []
+}
