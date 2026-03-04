@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   Landmark, Plus, BarChart2, Banknote, CheckCircle2,
   Search, Filter, Pencil, Trash2, RefreshCw, ChevronLeft, ChevronRight,
-  Users, UserPlus, Briefcase
+  Users, UserPlus, Briefcase, FileText, Download
 } from 'lucide-react';
 import { WorkEntry, Customer, Member, WorkArea } from './types';
 import { subscribeToEntries } from './services/workEntries';
 import { subscribeToCustomers, subscribeToMembers, subscribeToWorkAreas } from './services/dataPools';
+import { exportToExcel, exportToPDF } from './utils/exportUtils';
 import AddWorkModal from './components/AddWorkModal';
 import EditWorkModal from './components/EditWorkModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
@@ -227,6 +228,22 @@ export default function App() {
                 placeholder="Search customer, work or invoice..."
                 className="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm focus:border-primary outline-none"
               />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => exportToExcel(filtered)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-[11px] font-bold uppercase tracking-wider transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="hidden sm:inline">Excel</span>
+              </button>
+              <button
+                onClick={() => exportToPDF(filtered)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-[11px] font-bold uppercase tracking-wider transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5 text-rose-500" />
+                <span className="hidden sm:inline">PDF</span>
+              </button>
             </div>
             <button
               onClick={() => setShowMobileFilters(f => !f)}
