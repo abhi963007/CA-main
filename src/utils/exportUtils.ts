@@ -58,13 +58,14 @@ export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Repor
 
     autoTable(doc, {
         startY: 42,
-        head: [['Date', 'Customer', 'Service', 'Assigned', 'Status', 'Amount', 'Payment']],
+        head: [['Date', 'Customer', 'Service', 'Assigned', 'Status', 'Due Date', 'Amount', 'Payment']],
         body: data.map(e => [
             e.date,
             e.customerName,
             e.areaOfWork,
             e.assignedTo,
             e.status,
+            e.dueDate || '—',
             `Rs. ${e.amount.toLocaleString('en-IN')}`,
             e.paymentStatus
         ]),
@@ -80,7 +81,7 @@ export const exportToPDF = (data: WorkEntry[], fileName: string = 'CA_Work_Repor
             valign: 'middle'
         },
         columnStyles: {
-            5: { halign: 'right' }, // Amount column
+            6: { halign: 'right' }, // Amount column
         },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         margin: { top: 45, right: 15, bottom: 15, left: 15 },

@@ -361,8 +361,13 @@ export default function App() {
                         </div>
                         <span>{entry.assignedTo}</span>
                       </div>
-                      <span className="text-slate-300">·</span>
                       <span>{entry.date}</span>
+                      {entry.dueDate && (
+                        <>
+                          <span className="text-slate-300">·</span>
+                          <span className="text-rose-500 font-medium">Due: {entry.dueDate}</span>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <div className="flex items-center gap-3 text-[10px]">
@@ -386,6 +391,7 @@ export default function App() {
                       <th className="px-3 py-2.5 whitespace-nowrap">Sub Particular</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Assigned</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Status</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">Due Date</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Invoice</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Amount</th>
                       <th className="px-3 py-2.5 whitespace-nowrap">Payment</th>
@@ -405,6 +411,7 @@ export default function App() {
                         <td className="px-3 py-2 text-slate-500 max-w-[100px] truncate">{entry.subParticular}</td>
                         <td className="px-3 py-2 text-slate-600 truncate max-w-[100px]">{entry.assignedTo}</td>
                         <td className="px-3 py-2"><StatusBadge status={entry.status} /></td>
+                        <td className="px-3 py-2 whitespace-nowrap text-slate-500 font-medium">{entry.dueDate || <span className="text-slate-200">/</span>}</td>
                         <td className="px-3 py-2 text-slate-400 font-mono">{entry.invoiceNo}</td>
                         <td className="px-3 py-2 font-bold text-slate-800">₹{entry.amount.toLocaleString('en-IN')}</td>
                         <td className="px-3 py-2"><PaymentBadge status={entry.paymentStatus} /></td>
