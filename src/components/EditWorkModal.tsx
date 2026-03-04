@@ -30,6 +30,7 @@ export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
   const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [description, setDescription] = useState('');
   const [paymentMode, setPaymentMode] = useState('');
+  const [dueDate, setDueDate] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +61,7 @@ export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
       setPriority(entry.priority || 'Medium');
       setDescription(entry.description || '');
       setPaymentMode(entry.paymentMode || '');
+      setDueDate(entry.dueDate || '');
     }
   }, [entry]);
 
@@ -98,7 +100,8 @@ export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
         paymentStatus,
         priority,
         description,
-        paymentMode
+        paymentMode,
+        dueDate
       });
       onClose();
     } catch (err: any) {
@@ -143,6 +146,10 @@ export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">Entry Date</label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:bg-white focus:border-primary outline-none transition-all border" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Due Date</label>
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:bg-white focus:border-primary outline-none transition-all border" />
               </div>
 
               <div>

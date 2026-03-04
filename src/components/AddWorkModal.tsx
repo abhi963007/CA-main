@@ -30,6 +30,7 @@ export default function AddWorkModal({ isOpen, onClose }: AddWorkModalProps) {
   const [priority, setPriority] = useState<'Low' | 'Medium' | 'High'>('Medium');
   const [description, setDescription] = useState('');
   const [paymentMode, setPaymentMode] = useState('');
+  const [dueDate, setDueDate] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -77,7 +78,8 @@ export default function AddWorkModal({ isOpen, onClose }: AddWorkModalProps) {
         paymentStatus,
         priority,
         description,
-        paymentMode
+        paymentMode,
+        dueDate
       });
       onClose();
       // Reset form could go here, but onClose might unmount it anyway
@@ -123,6 +125,10 @@ export default function AddWorkModal({ isOpen, onClose }: AddWorkModalProps) {
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">Entry Date</label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:bg-white focus:border-primary outline-none transition-all border" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Due Date</label>
+                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3 text-sm focus:bg-white focus:border-primary outline-none transition-all border" />
               </div>
 
               <div>
