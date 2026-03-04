@@ -38,10 +38,22 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
             return acc;
         }, {});
 
-        return Object.entries(counts).map(([name, value]) => ({
-            name,
-            value: value as number
-        })).sort((a, b) => b.value - a.value);
+        let totalCount = 0;
+        const items = Object.entries(counts).map(([name, value]) => {
+            const val = value as number;
+            totalCount += val;
+            return { name, value: val };
+        }).sort((a, b) => b.value - a.value);
+
+        // Calculate start and end angles for each slice to pinpoint lines
+        let currentAngle = -90; // Starting from top
+        return items.map(item => {
+            const sliceAngle = (item.value / totalCount) * 360;
+            const midAngle = currentAngle + sliceAngle / 2;
+            const res = { ...item, midAngle };
+            currentAngle += sliceAngle;
+            return res;
+        });
     }, [entries]);
 
     return (
@@ -71,7 +83,7 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center -mt-10 overflow-hidden">
-                {/* 3D Container - Increased further to max-w-1200 and h-800 */}
+                {/* 3D Container */}
                 <div
                     className="relative w-full max-w-[1200px] h-[800px] flex items-center justify-center -mt-20"
                     style={{ perspective: '1800px' }}
@@ -157,12 +169,49 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                         </div>
                     </div>
 
-                    {/* ── Floating Labels ── */}
+                    {/* ── Floating Labels & Proper 3D Lines ── */}
                     <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                        <div className="w-full h-full relative max-w-[900px] max-h-[900px]">
+                        <div className="w-full h-full relative max-w-[1000px] max-h-[1000px]">
+                            {/* SVG Layer for lines */}
+                            <svg className="absolute inset-0 w-full h-full overflow-visible">
+                                {data.map((entry, index) => {
+                                    const rad = entry.midAngle * (Math.PI / 180);
+
+                                    // Start point on the chart surface (approx center of radius)
+                                    const x1 = 50 + 40 * Math.cos(rad);
+                                    const y1 = 50 + 20 * Math.sin(rad);
+
+                                    // Elbow point
+                                    const x2 = 50 + 52 * Math.cos(rad);
+                                    const y2 = 50 + 32 * Math.sin(rad);
+
+                                    return (
+                                        <g key={`line-group-${index}`}>
+                                            <motion.path
+                                                initial={{ pathLength: 0, opacity: 0 }}
+                                                animate={{ pathLength: 1, opacity: 1 }}
+                                                transition={{ delay: 1 + index * 0.1, duration: 0.5 }}
+                                                d={`M ${x1}% ${y1}% L ${x2}% ${y2}%`}
+                                                stroke={STATUS_COLORS[entry.name]}
+                                                strokeWidth="1.5"
+                                                fill="none"
+                                                strokeDasharray="4 2"
+                                            />
+                                            <motion.circle
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                transition={{ delay: 1 + index * 0.1 }}
+                                                cx={`${x1}%`} cy={`${y1}%`} r="3"
+                                                fill={STATUS_COLORS[entry.name]}
+                                            />
+                                        </g>
+                                    );
+                                })}
+                            </svg>
+
+                            {/* Label boxes */}
                             {data.map((entry, index) => {
-                                const angle = (index / data.length) * 360 - 90;
-                                const rad = angle * (Math.PI / 180);
+                                const rad = entry.midAngle * (Math.PI / 180);
                                 const x = 50 + 52 * Math.cos(rad);
                                 const y = 50 + 32 * Math.sin(rad);
 
@@ -171,30 +220,30 @@ export default function AnalyticsView({ entries, onBack }: AnalyticsViewProps) {
                                         key={`label-${index}`}
                                         initial={{ opacity: 0, scale: 0 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: 1 + index * 0.1 }}
+                                        transition={{ delay: 1.5 + index * 0.1 }}
                                         className="absolute flex flex-col items-center gap-1"
                                         style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
                                     >
-                                        <div className="bg-white/95 backdrop-blur-sm border border-slate-200 px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-                                            <div
-                                                className="w-3 h-3 rounded-full"
-                                                style={{ backgroundColor: STATUS_COLORS[entry.name] }}
-                                            />
-                                            <p className="text-xs font-black text-slate-800 whitespace-nowrap">
-                                                {entry.name}
-                                                <span className="ml-2 text-slate-400">
-                                                    {Math.round((entry.value / entries.length) * 100)}%
-                                                </span>
+                                        <div className="bg-white/95 backdrop-blur-sm border border-slate-200 px-4 py-2 rounded-2xl shadow-xl flex items-center gap-2 min-w-[140px] justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    className="w-2.5 h-2.5 rounded-full"
+                                                    style={{ backgroundColor: STATUS_COLORS[entry.name] }}
+                                                />
+                                                <p className="text-[11px] font-black text-slate-800 whitespace-nowrap">
+                                                    {entry.name}
+                                                </p>
+                                            </div>
+                                            <p className="text-[11px] font-black text-slate-400">
+                                                {Math.round((entry.value / entries.length) * 100)}%
                                             </p>
                                         </div>
-                                        <div className="h-8 w-px bg-slate-200" />
                                     </motion.div>
                                 );
                             })}
                         </div>
                     </div>
                 </div>
-
             </div>
         </motion.div>
     );
