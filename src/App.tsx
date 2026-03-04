@@ -15,9 +15,9 @@ import CustomSelect from './components/CustomSelect';
 import { StatusBadge, PaymentBadge } from './components/Badges';
 
 // Manage Modals
-import AddCustomerModal from './components/AddCustomerModal';
-import AddMemberModal from './components/AddMemberModal';
-import AddWorkAreaModal from './components/AddWorkAreaModal';
+import ManageCustomersModal from './components/ManageCustomersModal';
+import ManageMembersModal from './components/ManageMembersModal';
+import ManageAreasModal from './components/ManageAreasModal';
 
 const PAGE_SIZE = 15;
 
@@ -450,9 +450,9 @@ export default function App() {
       <DetailViewModal entry={viewingEntry} onClose={() => setViewingEntry(null)} />
 
       {/* Pool Modals */}
-      <AddCustomerModal isOpen={isCustOpen} onClose={() => setIsCustOpen(false)} />
-      <AddMemberModal isOpen={isMemberOpen} onClose={() => setIsMemberOpen(false)} />
-      <AddWorkAreaModal isOpen={isAreaOpen} onClose={() => setIsAreaOpen(false)} />
+      <ManageCustomersModal isOpen={isCustOpen} onClose={() => setIsCustOpen(false)} />
+      <ManageMembersModal isOpen={isMemberOpen} onClose={() => setIsMemberOpen(false)} />
+      <ManageAreasModal isOpen={isAreaOpen} onClose={() => setIsAreaOpen(false)} />
     </div>
   );
 }
