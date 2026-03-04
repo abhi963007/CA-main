@@ -14,6 +14,7 @@ import DeleteConfirmModal from './components/DeleteConfirmModal';
 import DetailViewModal from './components/DetailViewModal';
 import CustomSelect from './components/CustomSelect';
 import { StatusBadge, PaymentBadge } from './components/Badges';
+import { logoBase64 } from './utils/logo';
 
 // Manage Modals
 import ManageCustomersModal from './components/ManageCustomersModal';
@@ -147,12 +148,12 @@ export default function App() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3 sm:px-6 lg:px-10 gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary text-white flex-shrink-0">
-            <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="flex h-10 w-auto items-center justify-center rounded-lg flex-shrink-0">
+            <img src={logoBase64} alt="Abraham & Kurian Logo" className="h-8 sm:h-10 w-auto object-contain" />
           </div>
           <div>
-            <h1 className="text-sm sm:text-base font-bold leading-tight text-slate-900">CA Work Management</h1>
-            <p className="text-[10px] text-slate-400 hidden sm:block">Chartered Accountancy Office</p>
+            <h1 className="text-sm sm:text-lg font-bold leading-tight text-slate-900">Abraham & Kurian</h1>
+            <p className="text-[10px] text-slate-400 hidden sm:block">Chartered Accountants</p>
           </div>
         </div>
 
