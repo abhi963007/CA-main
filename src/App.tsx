@@ -335,6 +335,7 @@ export default function App() {
                     options={[
                       { label: 'Yes', value: 'Yes' },
                       { label: 'No', value: 'No' },
+                      { label: 'Not Required', value: 'Not Required' },
                     ]}
                   />
                 </div>

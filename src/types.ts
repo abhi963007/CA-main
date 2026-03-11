@@ -7,7 +7,7 @@ export type WorkStatus =
   | 'Not Assigned';
 
 export type PaymentStatus = 'Received' | 'Not Received';
-export type BilledStatus = 'Yes' | 'No';
+export type BilledStatus = 'Yes' | 'No' | 'Not Required';
 
 export interface WorkEntry {
   id: string;

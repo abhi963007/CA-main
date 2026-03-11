@@ -202,7 +202,7 @@ export default function AddWorkModal({ isOpen, onClose }: AddWorkModalProps) {
                     value={billed}
                     onChange={v => setBilled(v as BilledStatus)}
                     placeholder="..."
-                    options={[{ label: 'Yes', value: 'Yes' }, { label: 'No', value: 'No' }]}
+                    options={[{ label: 'Yes', value: 'Yes' }, { label: 'No', value: 'No' }, { label: 'Not Required', value: 'Not Required' }]}
                   />
                 </div>
                 <div>
