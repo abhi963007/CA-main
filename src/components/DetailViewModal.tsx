@@ -133,7 +133,9 @@ export default function DetailViewModal({ entry, onClose }: DetailViewModalProps
                             </span>
                             <div><PaymentBadge status={entry.paymentStatus} /></div>
                         </div>
-                        <Field label="Payment Mode" value={entry.paymentMode} />
+                        {entry.paymentStatus !== 'Not Received' && (
+                            <Field label="Payment Mode" value={entry.paymentMode} />
+                        )}
 
                         {/* ── Notes ── */}
                         {entry.description && (

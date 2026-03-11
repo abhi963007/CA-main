@@ -100,7 +100,7 @@ export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
         paymentStatus,
         priority,
         description,
-        paymentMode,
+        paymentMode: paymentStatus === 'Not Received' ? '' : paymentMode,
         dueDate
       });
       onClose();
@@ -259,20 +259,22 @@ export default function EditWorkModal({ entry, onClose }: EditWorkModalProps) {
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">Payment Mode</label>
-                <CustomSelect
-                  value={paymentMode}
-                  onChange={setPaymentMode}
-                  placeholder="Select mode..."
-                  options={[
-                    { label: 'UPI', value: 'UPI' },
-                    { label: 'Bank Transfer', value: 'Bank Transfer' },
-                    { label: 'Cash', value: 'Cash' },
-                    { label: 'Cheque', value: 'Cheque' },
-                  ]}
-                />
-              </div>
+              {paymentStatus !== 'Not Received' && (
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Payment Mode</label>
+                  <CustomSelect
+                    value={paymentMode}
+                    onChange={setPaymentMode}
+                    placeholder="Select mode..."
+                    options={[
+                      { label: 'UPI', value: 'UPI' },
+                      { label: 'Bank Transfer', value: 'Bank Transfer' },
+                      { label: 'Cash', value: 'Cash' },
+                      { label: 'Cheque', value: 'Cheque' },
+                    ]}
+                  />
+                </div>
+              )}
             </div>
           </section>
 
